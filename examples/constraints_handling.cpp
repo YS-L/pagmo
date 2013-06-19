@@ -156,10 +156,14 @@ int main()
 	std::cout << std::setprecision(5);
 
 	//0 - Experiment parameters
-	size_t number_of_islands = 30;
-	size_t number_of_individuals = 20;
-	size_t function_evaluations = 100;
+
+	// in CEC2006, the max number of function evaluation = 5,000; 50,000; 500,000
+	// for each run
+	size_t number_of_islands = 25;
+	size_t number_of_individuals = 60;
+	size_t function_evaluations = 5000;
 	size_t number_of_migrations = 1;
+
 
 	//1 - We instantiate the problems and store the problems
 	std::vector<problem::base_ptr> probs;
@@ -173,7 +177,7 @@ int main()
 	algos.push_back(algorithm::nsga2(gen).clone());
 	algos.push_back(algorithm::bee_colony(gen/2.).clone());
 	algos.push_back(algorithm::cmaes(gen).clone());
-	//    algos.push_back(algorithm::cs(gen*10,0.02,0.3,0.3).clone());
+	algos.push_back(algorithm::cs(gen*10,0.02,0.3,0.3).clone());
 	algos.push_back(algorithm::de(gen).clone());
 	algos.push_back(algorithm::de_1220(gen).clone());
 	algos.push_back(algorithm::ihs(gen*number_of_individuals).clone());
