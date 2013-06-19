@@ -643,3 +643,36 @@ def _death_penalty_ctor(self, problem = None, method = None):
 	self._orig_init(*arg_list)
 death_penalty._orig_init = death_penalty.__init__
 death_penalty.__init__ = _death_penalty_ctor
+
+# Renaming and placing the enums
+_problem.con2mo.method = _problem._method_type
+
+def _con2mo_ctor(self, problem = None, method = None):
+	"""
+	Implements a meta-problem class that wraps some other constrained problems,
+	resulting in multi-objective problem.
+
+	Two implementations of the constrained to multi-objective are available. For a problem with m constraints,
+	m+1 objective functions are defined with the objective function as first objective and clipped positive
+	constraints values for others. The second one is the constrained to nulti-objective defined by
+	Coello Coello, where the objectives due to constraints includes number of violated constraints and
+	objective function as well.
+	
+	USAGE: problem.(problem=PyGMO.cec2006(4), method=con2mo.method.SIMPLE)
+
+	* problem: PyGMO constrained problem one wants to treat with a multi-objective approach
+	* method: Simple constraints to multi-objective set with SIMPLE and COELLO method set with COELLO
+	"""
+
+	# We construct the arg list for the original constructor exposed by boost_python
+	arg_list=[]
+	if problem == None:
+		problem = cec2006(4)
+	if method == None:
+		method = con2mo.method.SIMPLE
+	arg_list.append(problem)
+	arg_list.append(method)
+	self._orig_init(*arg_list)
+con2mo._orig_init = con2mo.__init__
+con2mo.__init__ = _con2mo_ctor
+
