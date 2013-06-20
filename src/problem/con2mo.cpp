@@ -141,13 +141,6 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 	}
 }
 
-/// Implementation of the fc implementation.
-/// (Wraps over the original implementation)
-bool con2mo::compare_fc_impl(const fitness_vector &f1, const constraint_vector &c1, const fitness_vector &f2, const constraint_vector &c2) const
-{
-	return m_original_problem->compare_fc(f1,c1,f2,c2);
-}
-
 /// Extra human readable info for the problem.
 /**
  * Will return a formatted string containing the type of constraint handling
