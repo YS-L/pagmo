@@ -409,8 +409,9 @@ BOOST_PYTHON_MODULE(_problem) {
 		
 	// Constrained to multi-objective meta-problem
 	enum_<problem::con2mo::method_type>("_method_type")
-		.value("SIMPLE", problem::con2mo::SIMPLE)
-		.value("COELLO", problem::con2mo::COELLO);
+		.value("OBJ_CSTRS", problem::con2mo::OBJ_CSTRS)
+		.value("OBJ_CSTRSVIO", problem::con2mo::OBJ_CSTRSVIO)
+		.value("OBJ_EQVIO_INEQVIO", problem::con2mo::OBJ_EQVIO_INEQVIO);
 	// Expose con2mo methods.
 	problem_wrapper<problem::con2mo>("con2mo","Constrained to multi-objective problem")
 		.def("__init__", make_constructor(&construct_with_problem<problem::con2mo>))

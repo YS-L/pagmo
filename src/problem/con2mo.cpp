@@ -30,6 +30,42 @@
 #include "base.h"
 #include "con2mo.h"
 
+static int __mo_dimension__(const pagmo::problem::base &original_problem,
+							const pagmo::problem::con2mo::method_type method)
+{
+	if( method > 2 || method < 0) {
+		pagmo_throw(value_error, "The constrained to multi-objective method must be set to OBJ_CSTRS for Coello type constrained to multi-objective, to OBJ_CSTRSVIO for COMOGO type constrained to bi-objective problem or to OBJ_EQVIO_INEQVIO for COMOGO type constrained to three-objective problem.");
+	}
+
+	if(original_problem.get_c_dimension() <= 0){
+		pagmo_throw(value_error,"The original problem has no constraints.");
+	}
+
+	switch(method)
+	{
+	case pagmo::problem::con2mo::OBJ_CSTRS:
+	{
+		return original_problem.get_f_dimension() + original_problem.get_c_dimension();
+		break;
+	}
+	case pagmo::problem::con2mo::OBJ_CSTRSVIO:
+	{
+		return original_problem.get_f_dimension() + 1;
+		break;
+	}
+	case pagmo::problem::con2mo::OBJ_EQVIO_INEQVIO:
+	{
+		return original_problem.get_f_dimension() + 2;
+		break;
+	}
+	default:
+	{
+		return 0.;
+		break;
+	}
+	}
+}
+
 namespace pagmo { namespace problem {
 
 /**
@@ -45,23 +81,14 @@ namespace pagmo { namespace problem {
 con2mo::con2mo(const base &problem, const method_type method):
 	base((int)problem.get_dimension(),
 		 problem.get_i_dimension(),
-		 problem.get_f_dimension() + problem.get_c_dimension(),
+		 __mo_dimension__(problem, method),
 		 0,
 		 0,
 		 0.),
 	m_original_problem(problem.clone()),
 	m_method(method)
 {
-	if(m_original_problem->get_c_dimension() <= 0){
-		pagmo_throw(value_error,"The original problem has no constraints.");
-	}
-
-	if( method > 1 || method < 0) {
-		pagmo_throw(value_error, "the constrained to multi-objective method must be set to 0 for simple constrained to multi-objective or to 1 for Coello constrained to multi-objective problem.");
-	}
-
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
-
 }
 
 /// Copy Constructor. Performs a deep copy
@@ -97,6 +124,11 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 	fitness_vector::size_type original_nbr_obj = original_f.size();
 	constraint_vector::size_type number_of_constraints = c.size();
 
+	// clean the fitness vector
+	for(f_size_type i=0; i<f.size(); i++) {
+		f[i] =0.;
+	}
+
 	// in all cases, the first objectives holds the initial objectives
 	for(f_size_type i=0; i<original_nbr_obj; i++) {
 		f[i] = original_f.at(i);
@@ -104,14 +136,7 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 
 	switch(m_method)
 	{
-	case SIMPLE:
-	{
-		for(c_size_type i=0; i<number_of_constraints; i++) {
-			f[original_nbr_obj+i] = std::max(0., c.at(i));
-		}
-		break;
-	}
-	case COELLO:
+	case OBJ_CSTRS:
 	{
 		constraint_vector::size_type number_of_violated_constraints = 0;
 
@@ -135,8 +160,36 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 		}
 		break;
 	}
+	case OBJ_CSTRSVIO:
+	{
+		for(c_size_type i=0; i<number_of_constraints; i++) {
+			if(c.at(i) > 0.) {
+				f[original_nbr_obj] += c.at(i);
+			}
+		}
+		break;
+	}
+	case OBJ_EQVIO_INEQVIO:
+	{
+		c_size_type number_of_eq_constraints = m_original_problem->get_c_dimension() -
+				m_original_problem->get_ic_dimension();
+
+		// treating equality constraints
+		for(c_size_type i=0; i<number_of_eq_constraints; i++) {
+			if(c.at(i) > 0.) {
+				f[original_nbr_obj] += c.at(i);
+			}
+		}
+
+		for(c_size_type i=number_of_eq_constraints; i<number_of_constraints; i++) {
+			if(c.at(i) > 0.) {
+				f[original_nbr_obj+1] += c.at(i);
+			}
+		}
+		break;
+	}
 	default:
-		pagmo_throw(value_error, "Error: There are only 2 methods for the constraints to multi-objective!");
+		pagmo_throw(value_error, "Error: There are only 3 methods for the constraints to multi-objective!");
 		break;
 	}
 }
@@ -151,12 +204,16 @@ std::string con2mo::human_readable_extra() const
 	oss << m_original_problem->human_readable_extra() << std::endl;
 	oss << "\n\tConstraints handled with constraints to multi-objective, method ";
 	switch(m_method){
-	case SIMPLE: {
-		oss << "SIMPLE ";
+	case OBJ_CSTRS: {
+		oss << "OBJ_CSTRS ";
 		break;
 	}
-	case COELLO: {
-		oss << "COELLO ";
+	case OBJ_CSTRSVIO: {
+		oss << "OBJ_CSTRSVIO ";
+		break;
+	}
+	case OBJ_EQVIO_INEQVIO: {
+		oss << "OBJ_EQVIO_INEQVIO ";
 		break;
 	}
 	}
@@ -169,12 +226,16 @@ std::string con2mo::get_name() const
 	std::string method;
 
 	switch(m_method){
-	case SIMPLE: {
-		method = "SIMPLE ";
+	case OBJ_CSTRS: {
+		method = "OBJ_CSTRS ";
 		break;
 	}
-	case COELLO: {
-		method = "COELLO ";
+	case OBJ_CSTRSVIO: {
+		method = "OBJ_CSTRSVIO ";
+		break;
+	}
+	case OBJ_EQVIO_INEQVIO: {
+		method = "OBJ_EQVIO_INEQVIO ";
 		break;
 	}
 	}

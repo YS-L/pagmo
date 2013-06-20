@@ -651,17 +651,21 @@ def _con2mo_ctor(self, problem = None, method = None):
 	"""
 	Implements a meta-problem class that wraps some other constrained problems,
 	resulting in multi-objective problem.
-
-	Two implementations of the constrained to multi-objective are available. For a problem with m constraints,
-	m+1 objective functions are defined with the objective function as first objective and clipped positive
-	constraints values for others. The second one is the constrained to nulti-objective defined by
-	Coello Coello, where the objectives due to constraints includes number of violated constraints and
-	objective function as well.
+ 
+	Three implementations of the constrained to multi-objective are available. For a problem with m constraints,
+	m+1 objective functions, the first objective function is the original objective function.
+	The first implementation is the constrained to multi-objective defined by Coello Coello. The
+	objectives defined from constraints includes number of violated constraints and objective functions.
+	The second implementation is the COMOGA multi-objective problem: a biobjective problem with the second
+	objective the sum of the violations of the constraints.
+	The third implementation is the same as the second one but splitting the sum of violations between equality
+	and inequality constraints, resulting in a total of three objectives problem.
 	
-	USAGE: problem.(problem=PyGMO.cec2006(4), method=con2mo.method.SIMPLE)
+	USAGE: problem.(problem=PyGMO.cec2006(4), method=con2mo.method.OBJ_CSTRS)
 
 	* problem: PyGMO constrained problem one wants to treat with a multi-objective approach
-	* method: Simple constraints to multi-objective set with SIMPLE and COELLO method set with COELLO
+	* method: Coello constraints to multi-objective set with OBJ_CSTRS, COMOGA method set with OBJ_CSTRSVIO
+	and COMOGA with splitting of inequality and equality constraints set with OBJ_EQVIO_INEQVIO
 	"""
 
 	# We construct the arg list for the original constructor exposed by boost_python
@@ -669,7 +673,7 @@ def _con2mo_ctor(self, problem = None, method = None):
 	if problem == None:
 		problem = cec2006(4)
 	if method == None:
-		method = con2mo.method.SIMPLE
+		method = con2mo.method.OBJ_CSTRS
 	arg_list.append(problem)
 	arg_list.append(method)
 	self._orig_init(*arg_list)

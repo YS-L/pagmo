@@ -98,10 +98,13 @@ problem::base_ptr get_constrained_prob(problem::base_ptr prob, int i) {
 		return problem::death_penalty(*prob,problem::death_penalty::KURI).clone();
 		break;
 	case(2):
-		return problem::con2mo(*prob,problem::con2mo::SIMPLE).clone();
+		return problem::con2mo(*prob,problem::con2mo::OBJ_CSTRS).clone();
 		break;
 	case(3):
-		return problem::con2mo(*prob,problem::con2mo::COELLO).clone();
+		return problem::con2mo(*prob,problem::con2mo::OBJ_CSTRSVIO).clone();
+		break;
+	case(4):
+		return problem::con2mo(*prob,problem::con2mo::OBJ_EQVIO_INEQVIO).clone();
 		break;
 	default:
 		return prob;
@@ -164,7 +167,6 @@ int main()
 	size_t function_evaluations = 5000;
 	size_t number_of_migrations = 1;
 
-
 	//1 - We instantiate the problems and store the problems
 	std::vector<problem::base_ptr> probs;
 	for(int i=0; i<24; i++) {
@@ -203,7 +205,7 @@ int main()
 	std::vector<std::string> stored_best_constraint_technique(probs.size(), "");
 
 	// for each constraints handling technique:
-	for(unsigned int ch=0; ch < 4; ch++) {
+	for(unsigned int ch=0; ch < 5; ch++) {
 
 		//Open the output file
 		std::ofstream myfile;
