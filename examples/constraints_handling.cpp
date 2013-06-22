@@ -129,10 +129,13 @@ std::string get_constrained_name(int i) {
 		return "Death_penalty_Kuri";
 		break;
 	case(2):
-		return "con2mo_simple";
+		return "con2mo_obj_cstrs";
 		break;
 	case(3):
-		return "con2mo_coello";
+		return "con2mo_obj_cstrsvio";
+		break;
+	case(4):
+		return "con2mo_obj_eqvio_ineqvio";
 		break;
 	default:
 		return "No_constraint_technique";
@@ -205,7 +208,7 @@ int main()
 	std::vector<std::string> stored_best_constraint_technique(probs.size(), "");
 
 	// for each constraints handling technique:
-	for(unsigned int ch=0; ch < 5; ch++) {
+	for(unsigned int ch=2; ch < 5; ch++) {
 
 		//Open the output file
 		std::ofstream myfile;
