@@ -30,15 +30,16 @@
 #include "../config.h"
 #include "../population.h"
 #include "../serialization.h"
-#include "sga.h"
 #include "base.h"
 
 namespace pagmo { namespace algorithm {
 
-/// VEGA based multi-objective meta-algorithm
+/// VEGA based multi-objective algorithm
 /**
- * Implements a meta-algorithm class that wraps some other algorithms,
- * resulting in multi-objective algorithm based on VEGA.
+ * Implements of the VEGA (Vector evaluated genetic algorithms) multi-objective agorithm. This algorithm is based on a simple genetic algorithm
+ * where the initial population is split into the number of objectives. Each sub populations are associated
+ * one objective as fitness function and sub populations are selected according to it with a proportionate selection
+ * process. Then, the subpopulations are put into a mating pool. The resulting population is mutated.
  *
  * @see Schaffer, J. D. (1985, July). Multiple objective optimization with vector evaluated genetic algorithms. In Proceedings of the 1st international Conference on Genetic Algorithms (pp. 93-100). L. Erlbaum Associates Inc.
  *
@@ -49,28 +50,88 @@ namespace pagmo { namespace algorithm {
 
 class __PAGMO_VISIBLE vega: public base
 {
-	public:
-		// constructors
-		vega(const base & = sga());
-
-		// copy constructors
-		vega(const vega &);
-		base_ptr clone() const;
-		std::string get_name() const;
-
-		void evolve(population &) const;
-
-	protected:
-		std::string human_readable_extra() const;
+public:
+	/// Selection info
+	struct selection {
+		/// Selection type, best 20% or roulette
+		enum type {BEST20 = 0,ROULETTE = 1};
+	};
+	/// Mutation operator info
+	struct mutation {
+		/// Mutation type, gaussian or random
+		enum type {GAUSSIAN = 0, RANDOM = 1};
+		/// Constructor
+		/**
+				* \param[in] t the mutation type
+				* \param[in] width the width of the gaussian bell in case of a gaussian mutation. The
+				*		parameter is otherwise ignored. width is a percentage with respect to the
+				*		ub[i]-lb[i] width.
+				*/
+		mutation(mutation::type t, double width) : m_type(t),m_width(width) {}
+		/// Mutation type
+		type m_type;
+		/// Mutation width
+		double m_width;
 	private:
 		friend class boost::serialization::access;
 		template <class Archive>
 		void serialize(Archive &ar, const unsigned int)
 		{
-			ar & boost::serialization::base_object<base>(*this);
-			ar & m_mo_algo;
+			ar & m_type;
+			ar & m_width;
 		}
-		base_ptr m_mo_algo;
+	};
+
+	/// Crossover operator info
+	struct crossover {
+		/// Crossover type, binomial or exponential
+		enum type {BINOMIAL = 0, EXPONENTIAL = 1};
+	};
+
+public:
+	// constructors
+	vega(int gen  = 1, const double &cr = .95, const double &m = .02, int elitism = 1,
+		 mutation::type mut  = mutation::GAUSSIAN, double width = 0.1,
+		 selection::type sel = selection::ROULETTE,
+		 crossover::type cro = crossover::EXPONENTIAL);
+
+	base_ptr clone() const;
+	std::string get_name() const;
+
+	void evolve(population &) const;
+
+protected:
+	std::string human_readable_extra() const;
+private:
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int)
+	{
+		ar & boost::serialization::base_object<base>(*this);
+		ar & const_cast<int &>(m_gen);
+		ar & const_cast<double &>(m_cr);
+		ar & const_cast<double &>(m_m);
+		ar & const_cast<int &>(m_elitism);
+		ar & const_cast<mutation &>(m_mut);
+		ar & const_cast<selection::type &>(m_sel);
+		ar & const_cast<crossover::type &>(m_cro);
+	}
+
+	//Number of generations
+	const int m_gen;
+	//Crossover rate
+	const double m_cr;
+	//Mutation rate
+	const double m_m;
+
+	//Elitism (number of generations after which to reinsert the best)
+	const int m_elitism;
+	//Mutation
+	const mutation m_mut;
+	//Selection_type
+	const selection::type m_sel;
+	//Crossover_type
+	const crossover::type m_cro;
 };
 
 }} //namespaces
