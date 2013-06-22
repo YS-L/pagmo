@@ -126,12 +126,11 @@ void vega::evolve(population &pop) const
 	std::vector<double> cumsum(sub_pop_size);
 	std::vector<double> cumsumTemp(sub_pop_size);
 
-	std::vector <int> selection(NP);
-
+	std::vector <int> selection(sub_pop_size);
 
 	// Initialise the chromosomes and their fitness to that of the initial deme
 	for (pagmo::population::size_type i = 0; i<NP; i++ ) {
-		// X[i]	=	pop.get_individual(i).cur_x;
+		X[i]	=	pop.get_individual(i).cur_x;
 		fit[i]	=	pop.get_individual(i).cur_f;
 	}
 
@@ -180,26 +179,23 @@ void vega::evolve(population &pop) const
 			problem::base_ptr current_sub_prob = sub_probs.at(sp_idx);
 			std::vector<fitness_vector> &current_sub_f = sub_f[sp_idx];
 			std::vector<decision_vector> &current_sub_x = sub_x[sp_idx];
+			//std::vector<population::size_type> &current_sub_idx = sub_idx[sp_idx];
 
 			current_sub_f = std::vector<fitness_vector>(sub_pop_size);
 			current_sub_x = std::vector<decision_vector>(sub_pop_size);
-
-			//std::vector<population::size_type> &current_sub_idx = sub_idx[i];
 
 			population::size_type sub_pop_begin_idx = sp_idx*sub_pop_size;
 
 			// for each individuals of the current subpopulation
 			for(pagmo::population::size_type k=0; k<sub_pop_size; k++) {
-				// initialize the current sub_idx
-				// current_sub_idx[j] = ;
-
 				// initialize design and fitness vectors
 				current_sub_x[k] = pop.get_individual(sub_pop_begin_idx + k).cur_x;
 				current_sub_f[k] = current_sub_prob->objfun(current_sub_x[k]);
+				// current_sub_idx[j] = ;
 			}
 		}
 
-		// loop over the sub problems
+		// loop over the sub problems to do the selection
 		for(unsigned int sp_idx=0; sp_idx<prob_f_dimension; sp_idx++) {
 
 			std::vector<fitness_vector> &current_sub_f = sub_f[sp_idx];
@@ -208,7 +204,9 @@ void vega::evolve(population &pop) const
 			// ---------------------------
 			// scaled roulette
 			// selection of the best individuals among the current sub population
+			// checked and seems to be correctly implemented
 			// ---------------------------
+
 			// We scale all fitness values from 0 (worst) to absolute value of the best fitness
 			fitness_vector worstfit = current_sub_f[0];
 			for(pagmo::population::size_type i=1; i < sub_pop_size; i++) {
@@ -223,6 +221,7 @@ void vega::evolve(population &pop) const
 
 			// We build and normalise the cumulative sum
 			cumsumTemp[0] = selectionfitness[0];
+
 			for(pagmo::population::size_type i=1; i < sub_pop_size; i++) {
 				cumsumTemp[i] = cumsumTemp[i - 1] + selectionfitness[i];
 			}
@@ -248,10 +247,11 @@ void vega::evolve(population &pop) const
 			// We have the selected individuals in the sub population
 			// we can now store the current individuals in the mating pool
 			population::size_type sub_pop_begin_idx = sp_idx * sub_pop_size;
+			std::vector<decision_vector> &current_sub_x = sub_x[sp_idx];
 
 			// Xnew stores the new selected generation of chromosomes
 			for (pagmo::population::size_type i=0; i < sub_pop_size; i++) {
-				Xnew[sub_pop_begin_idx + i] = X[selection[i]];
+				Xnew[sub_pop_begin_idx + i] = current_sub_x[selection[i]];
 			}
 		}
 
@@ -261,16 +261,16 @@ void vega::evolve(population &pop) const
 			decision_vector member1, member2;
 
 			for(pagmo::population::size_type i=0; i < NP; i++) {
-				//for each chromosome selected i.e. in Xnew
+				// for each chromosome selected i.e. in Xnew
 				member1 = Xnew[i];
-				//we select a mating patner different from the self (i.e. no masturbation)
+				// we select a mating partner different from the self (i.e. no masturbation)
 				do {
 					r1 = boost::uniform_int<int>(0,NP - 1)(m_urng);
 				} while ( r1 == boost::numeric_cast<int>(i) );
 				member2 = Xnew[r1];
-				//and we operate crossover
+				// and we operate crossover
 				switch (m_cro) {
-				//0 - binomial crossover
+				// 0 - binomial crossover
 				case crossover::BINOMIAL: {
 					size_t n = boost::uniform_int<int>(0,D-1)(m_urng);
 					for (size_t L = 0; L < D; ++L) { /* perform D binomial trials */
@@ -280,7 +280,7 @@ void vega::evolve(population &pop) const
 						n = (n+1)%D;
 					}
 					break; }
-					//1 - exponential crossover
+					// 1 - exponential crossover
 				case crossover::EXPONENTIAL: {
 					size_t n = boost::uniform_int<int>(0,D-1)(m_urng);
 					L = 0;
@@ -339,7 +339,7 @@ void vega::evolve(population &pop) const
 		}
 		}
 
-		// If the problem is a stochastic optimization chage the seed and re-evaluate taking care to update also best and local bests
+		// If the problem is a stochastic optimization change the seed and re-evaluate taking care to update also best and local bests
 		try
 		{
 			//4 - Evaluate the new population (stochastic problem)
@@ -349,7 +349,7 @@ void vega::evolve(population &pop) const
 			// We re-evaluate the best individual (for elitism)
 			prob.objfun(bestfit,bestX);
 			// Re-evaluate wrt new seed the particle position and memory
-			for (pagmo::population::size_type i = 0; i < NP;i++) {
+			for (pagmo::population::size_type i=0; i < NP; i++) {
 				// We evaluate here the new individual fitness
 				prob.objfun(fit[i],Xnew[i]);
 				// We update the velocity (in case coupling with PSO via archipelago)
@@ -381,7 +381,7 @@ void vega::evolve(population &pop) const
 			}
 		}
 
-		//	// need to check if elitism is possible with MO
+		//	// need to check if elitism is suitable with MO
 
 		//	//5 - Reinsert best individual every m_elitism generations
 		//	if (j % m_elitism == 0) {
@@ -398,7 +398,7 @@ void vega::evolve(population &pop) const
 		//		pop.set_v(worst,dummy);
 		//	}
 
-		// updating the design vectors
+		// updating the design vectors ()
 		X = Xnew;
 	} // end of main VEGA loop
 }
