@@ -118,6 +118,16 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 	constraint_vector c(m_original_problem->get_c_dimension(),0.);
 	m_original_problem->compute_constraints(c,x);
 
+	// modify equality constraints to behave as inequality constraints:
+	c_size_type number_of_eq_constraints = m_original_problem->get_c_dimension() -
+			m_original_problem->get_ic_dimension();
+
+	const std::vector<double> &c_tol = m_original_problem->get_c_tol();
+
+	for(c_size_type i=0; i<number_of_eq_constraints; i++) {
+		c[i] = std::abs(c.at(i)) - c_tol.at(i);
+	}
+
 	decision_vector original_f(m_original_problem->get_f_dimension(),0.);
 	m_original_problem->objfun(original_f,x);
 
@@ -126,7 +136,7 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 
 	// clean the fitness vector
 	for(f_size_type i=0; i<f.size(); i++) {
-		f[i] =0.;
+		f[i] = 0.;
 	}
 
 	// in all cases, the first objectives holds the initial objectives
@@ -171,9 +181,6 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 	}
 	case OBJ_EQVIO_INEQVIO:
 	{
-		c_size_type number_of_eq_constraints = m_original_problem->get_c_dimension() -
-				m_original_problem->get_ic_dimension();
-
 		// treating equality constraints
 		for(c_size_type i=0; i<number_of_eq_constraints; i++) {
 			if(c.at(i) > 0.) {
