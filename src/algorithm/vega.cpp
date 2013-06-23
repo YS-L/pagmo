@@ -47,8 +47,8 @@ namespace pagmo { namespace algorithm {
  *
  * @param[in] algo pagmo::algorithm to use as multi-objective algorithm
  */
-vega::vega(int gen, const double &cr, const double &m, int elitism, mutation::type mut, double width, selection::type sel, crossover::type cro)
-	:base(),m_gen(gen),m_cr(cr),m_m(m),m_elitism(elitism),m_mut(mut,width),m_sel(sel),m_cro(cro)
+vega::vega(int gen, const double &cr, const double &m, int elitism, mutation::type mut, double width, crossover::type cro)
+	:base(),m_gen(gen),m_cr(cr),m_m(m),m_elitism(elitism),m_mut(mut,width),m_cro(cro)
 {
 	if (gen < 0) {
 		pagmo_throw(value_error,"number of generations must be nonnegative");
@@ -141,26 +141,9 @@ void vega::evolve(population &pop) const
 	bestX = pop.get_individual(bestidx).cur_x;
 	bestfit = pop.get_individual(bestidx).cur_f;
 
-	//	int tempID;
-	//	std::vector<int> fitnessID(NP);
-
-	//	std::vector<population::size_type> best_idx(NP);
-	//	population::size_type parent1_idx, parent2_idx;
-	//	decision_vector child1(D), child2(D);
-
-	//	// we create shuffled indexed on the population
-	//	std::vector<population::size_type> shuffle(NP);
-	//	for (pagmo::population::size_type i=0; i< NP; i++) shuffle[i] = i;
-
-	//	boost::uniform_int<int> pop_idx(0,NP-1);
-	//	boost::variate_generator<boost::mt19937 &, boost::uniform_int<int> > p_idx(m_urng,pop_idx);
-
-	//	//We create some pseudo-random permutation of the poulation indexes
-	//	std::random_shuffle(shuffle.begin(),shuffle.end(),p_idx);
-
 	// creates new sub problems using the decompose meta-problem
 	std::vector<problem::base_ptr> sub_probs;
-	std::vector< std::vector<population::size_type> > sub_idx(prob_f_dimension);
+	// std::vector< std::vector<population::size_type> > sub_idx(prob_f_dimension);
 	std::vector< std::vector<decision_vector> > sub_x(prob_f_dimension);
 	std::vector< std::vector<fitness_vector> > sub_f(prob_f_dimension);
 
@@ -173,6 +156,12 @@ void vega::evolve(population &pop) const
 
 	// Main VEGA loop
 	for(int j=0; j<m_gen; j++) {
+
+		boost::uniform_int<int> pop_idx(0,NP-1);
+		boost::variate_generator<boost::mt19937 &, boost::uniform_int<int> > p_idx(m_urng,pop_idx);
+
+		//We create some pseudo-random permutation of the poulation indexes
+		std::random_shuffle(X.begin(),X.end(),p_idx);
 
 		// Initialise the fitness with each problems
 		for(unsigned int sp_idx=0; sp_idx<prob_f_dimension; sp_idx++) {
@@ -189,7 +178,7 @@ void vega::evolve(population &pop) const
 			// for each individuals of the current subpopulation
 			for(pagmo::population::size_type k=0; k<sub_pop_size; k++) {
 				// initialize design and fitness vectors
-				current_sub_x[k] = pop.get_individual(sub_pop_begin_idx + k).cur_x;
+				current_sub_x[k] = X.at(sub_pop_begin_idx + k);
 				current_sub_f[k] = current_sub_prob->objfun(current_sub_x[k]);
 				// current_sub_idx[j] = ;
 			}
@@ -214,7 +203,6 @@ void vega::evolve(population &pop) const
 					worstfit = current_sub_f[i];
 			}
 
-			// ????
 			for(pagmo::population::size_type i=0; i < sub_pop_size; i++) {
 				selectionfitness[i] = fabs(worstfit[0] - current_sub_f[i][0]);
 			}
@@ -381,24 +369,24 @@ void vega::evolve(population &pop) const
 			}
 		}
 
-		//	// need to check if elitism is suitable with MO
+		// need to check if elitism is suitable with MO
 
-		//	//5 - Reinsert best individual every m_elitism generations
-		//	if (j % m_elitism == 0) {
-		//		int worst=0;
-		//		for (pagmo::population::size_type i = 1; i < NP;i++) {
-		//			if ( prob.compare_fitness(fit[worst],fit[i]) ) worst=i;
-		//		}
-		//		Xnew[worst] = bestX;
-		//		fit[worst] = bestfit;
-		//		dummy = Xnew[worst];
-		//		std::transform(dummy.begin(), dummy.end(), pop.get_individual(worst).cur_x.begin(), dummy.begin(),std::minus<double>());
-		//		//updates x and v (cache avoids to recompute the objective function)
-		//		pop.set_x(worst,Xnew[worst]);
-		//		pop.set_v(worst,dummy);
-		//	}
+		//5 - Reinsert best individual every m_elitism generations
+		if (j % m_elitism == 0) {
+			int worst=0;
+			for (pagmo::population::size_type i = 1; i < NP;i++) {
+				if ( prob.compare_fitness(fit[worst],fit[i]) ) worst=i;
+			}
+			Xnew[worst] = bestX;
+			fit[worst] = bestfit;
+			dummy = Xnew[worst];
+			std::transform(dummy.begin(), dummy.end(), pop.get_individual(worst).cur_x.begin(), dummy.begin(),std::minus<double>());
+			//updates x and v (cache avoids to recompute the objective function)
+			pop.set_x(worst,Xnew[worst]);
+			pop.set_v(worst,dummy);
+		}
 
-		// updating the design vectors ()
+		// updating the design vectors
 		X = Xnew;
 	} // end of main VEGA loop
 }
@@ -431,17 +419,6 @@ std::string vega::human_readable_extra() const
 		break;
 	}
 	}
-	s << "selection:";
-	switch (m_sel) {
-	case selection::BEST20: {
-		s << "BEST20 ";
-		break;
-	}
-	case selection::ROULETTE: {
-		s << "ROULETTE ";
-		break;
-	}
-	}
 	s << "crossover:";
 	switch (m_cro) {
 	case crossover::EXPONENTIAL: {
@@ -456,7 +433,6 @@ std::string vega::human_readable_extra() const
 
 	return s.str();
 }
-
 
 //pagmo::population::size_type vega::roulette_selection(pagmo::population::size_type idx1, pagmo::population::size_type idx2, const pagmo::population& pop) const
 //{

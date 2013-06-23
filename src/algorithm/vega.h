@@ -51,11 +51,6 @@ namespace pagmo { namespace algorithm {
 class __PAGMO_VISIBLE vega: public base
 {
 public:
-	/// Selection info
-	struct selection {
-		/// Selection type, best 20% or roulette
-		enum type {BEST20 = 0,ROULETTE = 1};
-	};
 	/// Mutation operator info
 	struct mutation {
 		/// Mutation type, gaussian or random
@@ -92,7 +87,6 @@ public:
 	// constructors
 	vega(int gen  = 1, const double &cr = .95, const double &m = .02, int elitism = 1,
 		 mutation::type mut  = mutation::GAUSSIAN, double width = 0.1,
-		 selection::type sel = selection::ROULETTE,
 		 crossover::type cro = crossover::EXPONENTIAL);
 
 	base_ptr clone() const;
@@ -113,7 +107,6 @@ private:
 		ar & const_cast<double &>(m_m);
 		ar & const_cast<int &>(m_elitism);
 		ar & const_cast<mutation &>(m_mut);
-		ar & const_cast<selection::type &>(m_sel);
 		ar & const_cast<crossover::type &>(m_cro);
 	}
 
@@ -128,8 +121,6 @@ private:
 	const int m_elitism;
 	//Mutation
 	const mutation m_mut;
-	//Selection_type
-	const selection::type m_sel;
 	//Crossover_type
 	const crossover::type m_cro;
 };
