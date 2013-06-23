@@ -45,8 +45,8 @@ int main()
 	std::cout << orig_prob << std::endl;
 	//std::cout << decomposed_problem << std::endl;
 
-	pagmo::island isl = island(alg, orig_prob, 100);
-	pagmo::population original_problem_pop = population(orig_prob, 4);
+	pagmo::island isl = island(alg, orig_prob, 50);
+	//pagmo::population original_problem_pop = population(orig_prob, 50);
 
 	std::cout << "Initial distance from Pareto Front (p-distance): " << orig_prob.p_distance(isl.get_population()) << std::endl;
 	for (size_t i = 0; i< 10; ++i){
