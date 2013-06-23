@@ -166,7 +166,7 @@ int main()
 	// in CEC2006, the max number of function evaluation = 5,000; 50,000; 500,000
 	// for each run
 	size_t number_of_islands = 25;
-	size_t number_of_individuals = 60;
+	size_t number_of_individuals = 60; // was 60
 	size_t function_evaluations = 5000;
 	size_t number_of_migrations = 1;
 
@@ -179,6 +179,7 @@ int main()
 	//2 - We instantiate the algorithms
 	std::vector<algorithm::base_ptr> algos;
 	int gen = function_evaluations/number_of_individuals/number_of_migrations;
+	algos.push_back(algorithm::vega(gen).clone());
 	algos.push_back(algorithm::nsga2(gen).clone());
 	algos.push_back(algorithm::bee_colony(gen/2.).clone());
 	algos.push_back(algorithm::cmaes(gen).clone());
