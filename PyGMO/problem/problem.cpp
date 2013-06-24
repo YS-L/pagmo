@@ -395,17 +395,16 @@ BOOST_PYTHON_MODULE(_problem) {
 	// Death penalty meta-problem
 	problem_wrapper<problem::death_penalty>("death_penalty","Constrained death penalty problem")
 		.def(init<optional<const problem::base &, problem::death_penalty::method_type> >());
-		
-	// Constrained to multi-objective meta-problem
+
+	// con2mo penalty enums
 	enum_<problem::con2mo::method_type>("_method_type")
 		.value("OBJ_CSTRS", problem::con2mo::OBJ_CSTRS)
 		.value("OBJ_CSTRSVIO", problem::con2mo::OBJ_CSTRSVIO)
 		.value("OBJ_EQVIO_INEQVIO", problem::con2mo::OBJ_EQVIO_INEQVIO);
-	// Expose con2mo methods.
+	// Constrained to multi-objective meta-problem.
 	problem_wrapper<problem::con2mo>("con2mo","Constrained to multi-objective problem")
-		.def("__init__", make_constructor(&construct_with_problem<problem::con2mo>))
-		.def("__init__", make_constructor(&construct_with_problem_and_stuff<problem::con2mo,problem::con2mo::method_type>));
-   
+		.def(init<optional<const problem::base &, problem::con2mo::method_type> >());
+
 	// Shifted meta-problem
 	problem_wrapper<problem::shifted>("shifted","Shifted problem")
 		.def(init<const problem::base &>())

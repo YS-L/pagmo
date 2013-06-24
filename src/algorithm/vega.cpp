@@ -37,7 +37,7 @@
 #include "base.h"
 #include "vega.h"
 #include "../problem/base_stochastic.h"
-#include "../problem/decomposition.h"
+#include "../problem/decompose.h"
 
 namespace pagmo { namespace algorithm {
 
@@ -151,7 +151,7 @@ void vega::evolve(population &pop) const
 	for(unsigned int i=0; i<prob_f_dimension; i++) {
 		std::vector<double> sub_prob_weights(prob_f_dimension,0.);
 		sub_prob_weights[i] = 1.;
-		sub_probs.push_back(problem::decomposition(prob, sub_prob_weights).clone());
+		sub_probs.push_back(problem::decompose(prob, sub_prob_weights).clone());
 	}
 
 	// Main VEGA loop
