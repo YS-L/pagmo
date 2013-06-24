@@ -13,7 +13,7 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/pso.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/pso_generational.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/bee_colony.cpp
-	#${CMAKE_CURRENT_SOURCE_DIR}/algorithm/firefly.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/firefly.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/cmaes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/aco.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/nsga2.cpp
@@ -36,6 +36,10 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/worst_r_policy.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/random_r_policy.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/base.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/base_aco.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/base_stochastic.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/base_dtlz.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/base_unc_mo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/griewank.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/levy5.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/lennard_jones.cpp
@@ -62,9 +66,6 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/string_match.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/michalewicz.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/dejong.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/problem/base_aco.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/problem/base_stochastic.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/problem/base_dtlz.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/tsp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/knapsack.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/sch.cpp
@@ -85,7 +86,7 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/shifted.cpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/rotated.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/normalized.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/problem/decomposition.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/decompose.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/noisy.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/barabasi_albert.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/clustered_ba.cpp

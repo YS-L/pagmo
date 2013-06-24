@@ -34,8 +34,8 @@ int main()
 {
 	pagmo::problem::zdt1 orig_prob(10);
 
-	//std::vector<double> weights(2,0.5);
-	//pagmo::problem::decomposition decomposed_problem(orig_prob, weights);
+//	std::vector<double> weights(2,0.5);
+//	pagmo::problem::decompose decomposed_problem(orig_prob, weights);
 
 	// pagmo::algorithm::jde alg(50);
 

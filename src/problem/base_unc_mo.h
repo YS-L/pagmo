@@ -22,64 +22,50 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_PROBLEM_DECOMPOSITION_H
-#define PAGMO_PROBLEM_DECOMPOSITION_H
+#ifndef PAGMO_PROBLEM_BASE_UNC_MO_H
+#define PAGMO_PROBLEM_BASE_UNC_MO_H
 
-#include <string>
-
-#include "../serialization.h"
-#include "../types.h"
 #include "base.h"
-#include "zdt1.h"
+#include "../serialization.h"
 
 namespace pagmo{ namespace problem {
 
-/// Decomposition meta-problem
+/// Base Class for Unconstrained Multi-objective problems
 /**
- * Implements a meta-problem class resulting in a decomposed version
- * of the multi-objective input problem, i.e. a single-objective problem
- * having as fitness function a convex combination of the original fitness functions.
+ * This class adds to pagmo::problem::base the virtual method p_distance
+ * which returns the convergence metric of an individual or a population if
+ * the user re-implemented the convergence_metric virtual method.
+ * Only unconstrained multi-objective problems can derive from this class.
+ * 
+ * In problems where it is possible, the user needs to derive from
+ * pagmo::problem::base_unc_mo and reimplement the virtual method
+ * double base_unc_mo::convergence_metric(const decision_vector &x)
+ * (typically returning 0 if x lies on the Pareto Front)
  *
- * Being
- * \f$ F(X) = (F_1(X), \ldots, F_n(X)) \f$
- * the original multi-objective fitness function and 
- * \f$ w = (w_1, \ldots, w_n) \f$
- * the weight vector, the decomposition problem has as single-objective fitness function
- * \f[ F_d(X) = \sum_{i=1}^n w_i F_i(X) \f]
- *
- * @author Andrea Mambrini (andrea.mambrini@gmail.com)
+ * @author Dario Izzo (dario.izzo@gmail.com)
  */
-
-class __PAGMO_VISIBLE decomposition : public base
+class __PAGMO_VISIBLE base_unc_mo : public base
 {
 	public:
-		//constructor
-		decomposition(const base & = zdt1(1), const std::vector<double> & = std::vector<double>());
+		base_unc_mo(base::size_type, base::size_type, base::f_size_type);
 		
-		//copy constructor
-		decomposition(const decomposition &);
-		base_ptr clone() const;
-		std::string get_name() const;
-		const std::vector<double>& get_weights() const;
-		
-	protected:
-		std::string human_readable_extra() const;
-		void objfun_impl(fitness_vector &, const decision_vector &) const;
+		// p_distance methods
+		double p_distance(const decision_vector &) const;
+		double p_distance(const pagmo::population &) const;
 	private:
 		friend class boost::serialization::access;
 		template <class Archive>
 		void serialize(Archive &ar, const unsigned int)
 		{
 			ar & boost::serialization::base_object<base>(*this);
-			ar & m_original_problem;
-			ar & m_weights;
 		}
-		base_ptr m_original_problem;
-		std::vector<double> m_weights;
+	protected:
+		virtual double convergence_metric(const decision_vector &) const;
+
 };
 
 }} //namespaces
 
-BOOST_CLASS_EXPORT_KEY(pagmo::problem::decomposition);
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(pagmo::problem::base_unc_mo);
 
-#endif // PAGMO_PROBLEM_DECOMPOSITION_H
+#endif //PAGMO_PROBLEM_BASE_UNC_MO_H

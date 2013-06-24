@@ -22,69 +22,64 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_ALGORITHMS_H
-#define PAGMO_ALGORITHMS_H
+#ifndef PAGMO_PROBLEM_DECOMPOSE_H
+#define PAGMO_PROBLEM_DECOMPOSE_H
 
-// Header including all algorithms implemented in PaGMO.
+#include <string>
 
-// Heuristics
-#include "algorithm/base.h"
-#include "algorithm/cs.h"
-#include "algorithm/de.h"
-#include "algorithm/de_1220.h"
-#include "algorithm/sea.h"
-#include "algorithm/jde.h"
-#include "algorithm/ihs.h"
-#include "algorithm/mde_pbx.h"
-#include "algorithm/monte_carlo.h"
-#include "algorithm/null.h"
-#include "algorithm/pso.h"
-#include "algorithm/pso_generational.h"
-#include "algorithm/sa_corana.h"
-#include "algorithm/sga.h"
-#include "algorithm/nsga2.h"
-#include "algorithm/bee_colony.h"
-#include "algorithm/firefly.h"
-#include "algorithm/cmaes.h"
-#include "algorithm/aco.h"
-#include "algorithm/nsga2.h"
-#include "algorithm/vega.h"
+#include "../serialization.h"
+#include "../types.h"
+#include "base.h"
+#include "zdt1.h"
 
-// Hyper-heuristics
-#include "algorithm/mbh.h"
-#include "algorithm/ms.h"
+namespace pagmo{ namespace problem {
 
-// SNOPT algorithm.
-#ifdef PAGMO_ENABLE_SNOPT
-	#include "algorithm/snopt.h"
-#endif
+/// Decompose meta-problem
+/**
+ * Implements a meta-problem class resulting in a decomposed version
+ * of the multi-objective input problem, i.e. a single-objective problem
+ * having as fitness function a convex combination of the original fitness functions.
+ *
+ * Being
+ * \f$ F(X) = (F_1(X), \ldots, F_n(X)) \f$
+ * the original multi-objective fitness function and 
+ * \f$ w = (w_1, \ldots, w_n) \f$
+ * the weight vector, the decomposition problem has as single-objective fitness function
+ * \f[ F_d(X) = \sum_{i=1}^n w_i F_i(X) \f]
+ *
+ * @author Andrea Mambrini (andrea.mambrini@gmail.com)
+ */
 
-// IPOPT algorithm.
-#ifdef PAGMO_ENABLE_IPOPT
-	#include "algorithm/ipopt.h"
-#endif
+class __PAGMO_VISIBLE decompose : public base
+{
+	public:
+		//constructor
+		decompose(const base & = zdt1(1), const std::vector<double> & = std::vector<double>());
+		
+		//copy constructor
+		decompose(const decompose &);
+		base_ptr clone() const;
+		std::string get_name() const;
+		const std::vector<double>& get_weights() const;
+		
+	protected:
+		std::string human_readable_extra() const;
+		void objfun_impl(fitness_vector &, const decision_vector &) const;
+	private:
+		friend class boost::serialization::access;
+		template <class Archive>
+		void serialize(Archive &ar, const unsigned int)
+		{
+			ar & boost::serialization::base_object<base>(*this);
+			ar & m_original_problem;
+			ar & m_weights;
+		}
+		base_ptr m_original_problem;
+		std::vector<double> m_weights;
+};
 
-// GSL algorithms.
-#ifdef PAGMO_ENABLE_GSL
-	#include "algorithm/base_gsl.h"
-	#include "algorithm/gsl_bfgs.h"
-	#include "algorithm/gsl_bfgs2.h"
-	#include "algorithm/gsl_fr.h"
-	#include "algorithm/gsl_nm.h"
-	#include "algorithm/gsl_nm2.h"
-	#include "algorithm/gsl_nm2rand.h"
-	#include "algorithm/gsl_pr.h"
-#endif
+}} //namespaces
 
-// NLopt algorithms.
-#ifdef PAGMO_ENABLE_NLOPT
-	#include "algorithm/nlopt_bobyqa.h"
-	#include "algorithm/nlopt_cobyla.h"
-	#include "algorithm/nlopt_sbplx.h"
-	#include "algorithm/nlopt_slsqp.h"
-	#include "algorithm/nlopt_mma.h"
-	#include "algorithm/nlopt_aug_lag.h"
-	#include "algorithm/nlopt_aug_lag_eq.h"
-#endif
+BOOST_CLASS_EXPORT_KEY(pagmo::problem::decompose);
 
-#endif
+#endif // PAGMO_PROBLEM_DECOMPOSE_H

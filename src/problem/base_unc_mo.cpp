@@ -22,69 +22,68 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_ALGORITHMS_H
-#define PAGMO_ALGORITHMS_H
+#include "../types.h"
+#include "../population.h"
+#include "../exceptions.h"
+#include "base_unc_mo.h"
 
-// Header including all algorithms implemented in PaGMO.
+namespace pagmo { namespace problem {
 
-// Heuristics
-#include "algorithm/base.h"
-#include "algorithm/cs.h"
-#include "algorithm/de.h"
-#include "algorithm/de_1220.h"
-#include "algorithm/sea.h"
-#include "algorithm/jde.h"
-#include "algorithm/ihs.h"
-#include "algorithm/mde_pbx.h"
-#include "algorithm/monte_carlo.h"
-#include "algorithm/null.h"
-#include "algorithm/pso.h"
-#include "algorithm/pso_generational.h"
-#include "algorithm/sa_corana.h"
-#include "algorithm/sga.h"
-#include "algorithm/nsga2.h"
-#include "algorithm/bee_colony.h"
-#include "algorithm/firefly.h"
-#include "algorithm/cmaes.h"
-#include "algorithm/aco.h"
-#include "algorithm/nsga2.h"
-#include "algorithm/vega.h"
+/// Constructor from dimension and fitness dimension
+/**
+ * Will construct an n dimensional unconstrained multi-objective problem
+ * with nf objectives
+ *
+ * @param[in] n dimension of the problem.
+ * @param[in] ni integer dimension of the problem.
+ * @param[in] nf number of objectives
+ *
+ * @see problem::base constructors.
+ */
+base_unc_mo::base_unc_mo(size_type n, size_type ni, f_size_type nf):base(n, ni, nf, 0, 0, 0.0) {}
 
-// Hyper-heuristics
-#include "algorithm/mbh.h"
-#include "algorithm/ms.h"
+/// Distance from the Pareto front (of a population)
+/**
+ * Will return the average across the entire population of the convergence metric
+ *
+ * @param[in] pop population to be assigned a pareto distance
+ *
+ * @see problem::base_unc_mo::p_distance virtual method.
+ */
+double base_unc_mo::p_distance(const pagmo::population &pop) const
+{
+	double c = 0.0;
+	for (population::size_type i = 0; i < pop.size(); ++i) {
+		c += convergence_metric(pop.get_individual(i).cur_x);
+	}
 
-// SNOPT algorithm.
-#ifdef PAGMO_ENABLE_SNOPT
-	#include "algorithm/snopt.h"
-#endif
+	return c / pop.size();
+}
 
-// IPOPT algorithm.
-#ifdef PAGMO_ENABLE_IPOPT
-	#include "algorithm/ipopt.h"
-#endif
+/// Distance from the Pareto front (of a decision_vector)
+/**
+ * Will return the convergence metric of the decision_vector
+ *
+ * @param[in] x decision_vector 
+ *
+ */
+double base_unc_mo::p_distance(const decision_vector &x) const
+{
+	return convergence_metric(x);
+}
 
-// GSL algorithms.
-#ifdef PAGMO_ENABLE_GSL
-	#include "algorithm/base_gsl.h"
-	#include "algorithm/gsl_bfgs.h"
-	#include "algorithm/gsl_bfgs2.h"
-	#include "algorithm/gsl_fr.h"
-	#include "algorithm/gsl_nm.h"
-	#include "algorithm/gsl_nm2.h"
-	#include "algorithm/gsl_nm2rand.h"
-	#include "algorithm/gsl_pr.h"
-#endif
+/// Default implementation for a convergence metric
+/**
+ *
+ * @param[in] x decision_vector 
+ *
+ * @throws not_implemented_error always
+ *
+ */
+double base_unc_mo::convergence_metric(const decision_vector &x) const
+{
+	(void) x;	// avoids warnings during compilation
+	pagmo_throw(not_implemented_error, "Error: a convergence metric is not implemented for this problem.");
+}
 
-// NLopt algorithms.
-#ifdef PAGMO_ENABLE_NLOPT
-	#include "algorithm/nlopt_bobyqa.h"
-	#include "algorithm/nlopt_cobyla.h"
-	#include "algorithm/nlopt_sbplx.h"
-	#include "algorithm/nlopt_slsqp.h"
-	#include "algorithm/nlopt_mma.h"
-	#include "algorithm/nlopt_aug_lag.h"
-	#include "algorithm/nlopt_aug_lag_eq.h"
-#endif
-
-#endif
+}} // namespaces
