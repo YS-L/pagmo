@@ -22,69 +22,60 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_ALGORITHMS_H
-#define PAGMO_ALGORITHMS_H
+#ifndef PAGMO_ALGORITHM_SELF_ADAPTIVE_H
+#define PAGMO_ALGORITHM_SELF_ADAPTIVE_H
 
-// Header including all algorithms implemented in PaGMO.
+#include <string>
 
-// Heuristics
-#include "algorithm/base.h"
-#include "algorithm/cs.h"
-#include "algorithm/de.h"
-#include "algorithm/de_1220.h"
-#include "algorithm/sea.h"
-#include "algorithm/jde.h"
-#include "algorithm/ihs.h"
-#include "algorithm/mde_pbx.h"
-#include "algorithm/monte_carlo.h"
-#include "algorithm/null.h"
-#include "algorithm/pso.h"
-#include "algorithm/pso_generational.h"
-#include "algorithm/sa_corana.h"
-#include "algorithm/sga.h"
-#include "algorithm/nsga2.h"
-#include "algorithm/bee_colony.h"
-#include "algorithm/firefly.h"
-#include "algorithm/cmaes.h"
-#include "algorithm/aco.h"
-#include "algorithm/nsga2.h"
+#include "../config.h"
+#include "../population.h"
+#include "../serialization.h"
+#include "base.h"
+#include "cs.h"
 
-// Hyper-heuristics
-#include "algorithm/mbh.h"
-#include "algorithm/ms.h"
-#include "algorithm/self_adaptive.h"
+namespace pagmo { namespace algorithm {
 
-// SNOPT algorithm.
-#ifdef PAGMO_ENABLE_SNOPT
-	#include "algorithm/snopt.h"
-#endif
+/// Self-Adaptive Fitness constraints handling
+/**
+ *
+ * Seld-Adaptive Fitness constraints handling is a meta-algorithm that allow to solve constrained optimization problems.
+ * THe key idea of this constraint handling technique is to reprent the constraint violation by a single infeasibility measure,
+ * and to adapt dynamically the penalization of infeasible solutions.
+ *
+ * @see Farmani, R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
+ * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.
+ *
+ * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
+ */
+		
+class __PAGMO_VISIBLE self_adaptive: public base
+{
+public:
+	self_adaptive(const base & = cs(), int stop = 5, double perturb = 5e-2);
+	self_adaptive(const self_adaptive &);
+	base_ptr clone() const;
 
-// IPOPT algorithm.
-#ifdef PAGMO_ENABLE_IPOPT
-	#include "algorithm/ipopt.h"
-#endif
+public:
+	void evolve(population &) const;
+	std::string get_name() const;
+	base_ptr get_algorithm() const;
+	void set_algorithm(const base &);
+protected:
+	std::string human_readable_extra() const;
+private:
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int)
+	{
+		ar & boost::serialization::base_object<base>(*this);
+		ar & m_original_algo;
+	}
+	base_ptr m_original_algo;
 
-// GSL algorithms.
-#ifdef PAGMO_ENABLE_GSL
-	#include "algorithm/base_gsl.h"
-	#include "algorithm/gsl_bfgs.h"
-	#include "algorithm/gsl_bfgs2.h"
-	#include "algorithm/gsl_fr.h"
-	#include "algorithm/gsl_nm.h"
-	#include "algorithm/gsl_nm2.h"
-	#include "algorithm/gsl_nm2rand.h"
-	#include "algorithm/gsl_pr.h"
-#endif
+};
 
-// NLopt algorithms.
-#ifdef PAGMO_ENABLE_NLOPT
-	#include "algorithm/nlopt_bobyqa.h"
-	#include "algorithm/nlopt_cobyla.h"
-	#include "algorithm/nlopt_sbplx.h"
-	#include "algorithm/nlopt_slsqp.h"
-	#include "algorithm/nlopt_mma.h"
-	#include "algorithm/nlopt_aug_lag.h"
-	#include "algorithm/nlopt_aug_lag_eq.h"
-#endif
+}} //namespaces
 
-#endif
+BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::self_adaptive);
+
+#endif // PAGMO_ALGORITHM_SELF_ADAPTIVE_H
