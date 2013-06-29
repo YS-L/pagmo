@@ -32,27 +32,25 @@ using namespace pagmo;
 
 int main()
 {
-	pagmo::problem::zdt1 orig_prob(10);
+	pagmo::problem::cec2006 orig_prob(4);
+	//pagmo::problem::cec2006 orig_prob(23);
 
-	std::vector<double> weights(2,0.5);
-	pagmo::problem::decompose decomposed_problem(orig_prob, weights);
+	pagmo::algorithm::sga alg(1);
 
-	pagmo::algorithm::jde alg(50);
+	pagmo::algorithm::self_adaptive alg_constrained(alg, 50);
 
-	std::cout << alg << std::endl;
+	std::cout << alg_constrained << std::endl;
 	std::cout << orig_prob << std::endl;
-	std::cout << decomposed_problem << std::endl;
 
-	pagmo::island isl = island(alg, decomposed_problem, 100);
+	pagmo::island isl = island(alg_constrained, orig_prob, 100);
 	pagmo::population original_problem_pop = population(orig_prob, 1);
 
 	for (size_t i = 0; i< 10; ++i){
-	    isl.evolve(1);
-	    original_problem_pop.set_x(0, isl.get_population().champion().x);
-	    std::cout << "Distance from Pareto Front (p-distance): " << orig_prob.p_distance(original_problem_pop) << std::endl;
-	    std::cout << "Original fitness: " << orig_prob.objfun(isl.get_population().champion().x) << std::endl;
-	    std::cout << "Decomposed fitness: " << decomposed_problem.objfun(isl.get_population().champion().x) << std::endl;
-
+		isl.evolve(1);
+		original_problem_pop.set_x(0, isl.get_population().champion().x);
+	//	std::cout << "Distance from Pareto Front (p-distance): " << orig_prob.p_distance(original_problem_pop) << std::endl;
+	//	std::cout << "Original fitness: " << orig_prob.objfun(isl.get_population().champion().x) << std::endl;
+	//	std::cout << "Decomposed fitness: " << decomposed_problem.objfun(isl.get_population().champion().x) << std::endl;
 	}
 	return 0;
 }
