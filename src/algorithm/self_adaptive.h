@@ -51,7 +51,7 @@ namespace pagmo { namespace algorithm {
 class __PAGMO_VISIBLE self_adaptive: public base
 {
 public:
-	self_adaptive(const base & = cs(), int stop = 5, double perturb = 5e-2);
+	self_adaptive(const base & = cs(), int gen = 1);
 	self_adaptive(const self_adaptive &);
 	base_ptr clone() const;
 
@@ -60,8 +60,10 @@ public:
 	std::string get_name() const;
 	base_ptr get_algorithm() const;
 	void set_algorithm(const base &);
+
 protected:
 	std::string human_readable_extra() const;
+
 private:
 	friend class boost::serialization::access;
 	template <class Archive>
@@ -69,9 +71,11 @@ private:
 	{
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_algo;
+		ar & const_cast<int &>(m_gen);
 	}
 	base_ptr m_original_algo;
-
+	//Number of generations
+	const int m_gen;
 };
 
 }} //namespaces
