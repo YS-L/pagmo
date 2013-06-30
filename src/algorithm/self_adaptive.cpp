@@ -105,21 +105,12 @@ void self_adaptive::evolve(population &pop) const
 		feasible_idx.clear();
 		infeasible_idx.clear();
 
-//		bool pop_contains_non_feasible = false;
-//		bool pop_contains_feasible = false;
-//		bool pop_contains_only_feasible = true;
-//		bool pop_contains_only_infeasible = true;
-
 		// evaluates the scaling factor
 		for(pagmo::population::size_type i=0; i < pop_size; i++) {
 			const population::individual_type &current_individual = pop.get_individual(i);
 			if(prob.feasibility_x(current_individual.cur_x)) {
-//				pop_contains_feasible = true;
-//				pop_contains_only_infeasible = false;
 				feasible_idx.push_back(i);
 			} else {
-//				pop_contains_non_feasible = true;
-//				pop_contains_only_feasible = false;
 				infeasible_idx.push_back(i);
 			}
 		}
@@ -127,7 +118,8 @@ void self_adaptive::evolve(population &pop) const
 		// test a faire sur non feasible !
 		if(feasible_idx.size() == 0) {
 			// use real fitness as fitness evolution without touching the initial population
-			// TODO!
+			// TODO! Need to convert the problem to unconstrained problem and evove the population
+			// against this newly defined problem
 
 			//m_original_algo->evolve(pop);
 
@@ -233,6 +225,10 @@ void self_adaptive::evolve(population &pop) const
 							}
 						}
 					}
+
+					// apply penalty 1
+
+
 				} else { // the worst is the one that has the maximum infeasibility
 					for(pagmo::population::size_type i=0; i < infeasible_idx.size(); i++) {
 						const population::individual_type &current_individual =pop.get_individual(infeasible_idx.at(i));
@@ -247,11 +243,12 @@ void self_adaptive::evolve(population &pop) const
 							}
 						}
 					}
+
+
+				// do not apply penalty 1
+
 				}
 				// hat up is now availlable
-
-				decision_vector x_hat_up = pop.get_individual(hat_up_idx).cur_x;
-				fitness_vector f_hat_up =  pop.get_individual(hat_up_idx).cur_f;
 
 			} else { // case where there is no feasible solution in the population
 				// best is the individual with the lowest infeasibility
@@ -266,107 +263,16 @@ void self_adaptive::evolve(population &pop) const
 						hat_up_idx = i;
 					}
 				}
+
+				// apply penalty 1 to the population
+				// I think I killed the possibility of using maximization here...
+				for(pagmo::population::size_type i=0; i<pop_size; i++) {
+					// updates the fitness of the population
+					// f_dot[i] =
+				}
 			}
-			std::cout << hat_up_idx << std::endl;
-			std::cout << hat_down_idx << std::endl;
 		}
-
 	}
-
-	// sets up the modified problem
-	// it is based on the initial problem for which the fitness function is changed
-
-
-
-
-
-
-
-
-
-	//	int i = 0;
-	//	// Self-Adaptive main loop
-	//	while(i<m_stop){
-
-	//	}
-
-
-	//	//Check if the perturbation vector has size 1, in which case it fills up the whole vector with
-	//	//the same number
-	//	if (m_perturb.size()==1)
-	//	{
-	//		for (problem::base::size_type i=1;i<D;++i) m_perturb.push_back(m_perturb[0]);
-	//	}
-
-	//	//Check that the perturbation vector size equals the size of the problem
-	//	if (m_perturb.size()!=D)
-	//	{
-	//		pagmo_throw(value_error,"perturbation vector size does not match the problem size");
-	//	}
-
-	//	// Some dummies and temporary variables
-	//	decision_vector tmp_x(D), tmp_v(D);
-	//	double dummy, width;
-
-	//	// Init the best fitness and constraint vector
-	//	population pert_pop(pop);
-
-	//	int i = 0;
-
-	//	//self_adaptive main loop
-	//	while (i<m_stop){
-
-	//		//1. Perturb the current population
-	//		pert_pop.clear();
-	//		for (population::size_type j =0; j < NP; ++j)
-	//		{
-	//			for (decision_vector::size_type k=0; k < Dc; ++k)
-	//			{
-	//				dummy = pop.get_individual(j).best_x[k];
-	//				width = m_perturb[k];
-	//				tmp_x[k] = boost::uniform_real<double>(std::max(dummy-width*(ub[k]-lb[k]),lb[k]),std::min(dummy+width*(ub[k]-lb[k]),ub[k]))(m_drng);
-	//				dummy = pop.get_individual(j).cur_v[k];
-	//				tmp_v[k] = boost::uniform_real<double>(dummy-width*(ub[k]-lb[k]),dummy+width*(ub[k]-lb[k]))(m_drng);
-	//			}
-
-	//			for (decision_vector::size_type k=Dc; k < D; ++k)
-	//			{
-	//				dummy = pop.get_individual(j).best_x[k];
-	//				width = m_perturb[k];
-	//				tmp_x[k] = boost::uniform_int<int>(std::max(dummy-std::floor(width*(ub[k]-lb[k])),lb[k]),std::min(dummy+std::floor(width*(ub[k]-lb[k])),ub[k]))(m_urng);
-	//				dummy = pop.get_individual(j).cur_v[k];
-	//				tmp_v[k] = boost::uniform_int<int>(std::max(dummy-std::floor(width*(ub[k]-lb[k])),lb[k]),std::min(dummy+std::floor(width*(ub[k]-lb[k])),ub[k]))(m_urng);
-	//			}
-	//			pert_pop.push_back(tmp_x);
-	//			pop.set_v(j,tmp_v);
-	//		}
-
-	//		//2. Evolve population with selected algorithm
-	//		m_original_algo->evolve(pert_pop); i++;
-	//		if (m_screen_output)
-	//		{
-	//			std::cout << i << ". " << "\tLocal solution: " << pert_pop.champion().f << "\tGlobal best: " << pop.champion().f;
-	//			if (!prob.feasibility_x(pop.champion().x)) {
-	//				std::cout << " i";
-	//			}
-	//			std::cout << std::endl;
-	//		}
-
-	//		//3. Reset counter if improved
-	//		if (pert_pop.problem().compare_fc(pert_pop.champion().f,pert_pop.champion().c,pop.champion().f,pop.champion().c) )
-	//		{
-	//			i = 0;
-	//			if (m_screen_output) {
-	//				std::cout << "New solution accepted. Constraints vector: " << pert_pop.champion().c << '\n';
-	//			}
-	//			//update pop
-	//			for (population::size_type j=0; j<pop.size();++j)
-	//			{
-	//				pop.set_x(j,pert_pop.get_individual(j).best_x);
-	//				pop.set_v(j,pert_pop.get_individual(j).cur_v);
-	//			}
-	//		}
-	//	}
 }
 
 /// Algorithm name
