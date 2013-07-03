@@ -86,7 +86,7 @@ private:
 	double m_scaling_factor;
 	std::vector<double> m_solution_infeasibility;
 
-	std::vector<fitness_vector> m_f_dot;
+	std::vector<fitness_vector> m_fitness;
 
 	population::size_type m_hat_down_idx;
 	population::size_type m_hat_up_idx;

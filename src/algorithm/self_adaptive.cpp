@@ -106,6 +106,10 @@ void self_adaptive::evolve(population &pop) const
 		m_original_algo->evolve(pop_new);
 
 		// update the population pop
+		pop.clear();
+		for(pagmo::population::size_type i=0; i<pop_size; i++) {
+			pop.push_back(pop_new.get_individual(i).cur_x);
+		}
 	}
 }
 
