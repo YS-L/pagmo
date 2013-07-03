@@ -343,18 +343,17 @@ void self_adaptive::update_fitness(const population &pop)
 				( (std::exp(2. * m_solution_infeasibility.at(current_idx)) - 1.) / (std::exp(2.) - 1.) );
 	}
 
-	// find the maximum penalized value in the population
-	double max_penalized_value = m_fitness[infeasible_idx.at(0)][0];
+//	// find the maximum penalized value in the population
+//	double max_penalized_value = m_fitness[0][0];
 
-	for(population::size_type i=0; i<infeasible_idx.size(); i++) {
-		const population::size_type current_idx = infeasible_idx.at(i);
-		max_penalized_value = std::max(max_penalized_value, m_fitness[current_idx][0]);
-	}
+//	for(population::size_type i=0; i<pop_size; i++) {
+//		max_penalized_value = std::max(max_penalized_value, m_fitness[i][0]);
+//	}
 
-	// sets the final fitness to the whole population (even the feasible?)
-	for(population::size_type i=0; i<pop_size; i++) {
-		m_fitness[i][0] = max_penalized_value - m_fitness[i][0];
-	}
+//	// sets the final fitness to the whole population (even the feasible?)
+//	for(population::size_type i=0; i<pop_size; i++) {
+//		m_fitness[i][0] = max_penalized_value - m_fitness[i][0];
+//	}
 }
 
 void self_adaptive::compute_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop)
