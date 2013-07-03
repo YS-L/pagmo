@@ -92,10 +92,12 @@ void self_adaptive::evolve(population &pop) const
 		return;
 	}
 
+	problem::self_adaptive prob_new(prob,pop); // Create the new problem;
+	population pop_new(prob_new); // this is not good as it creates a new population....!
+
 	// Main Self-Adaptive loop
-	for (int k=0; k < m_gen; k++) {
-		problem::self_adaptive prob_new(prob,pop); // Create the new problem;
-		population pop_new(prob_new); // this is not good as it creates a new population....!
+	for (int k=0; k<m_gen; k++) {
+		prob_new.set_population(pop);
 
 		pop_new.clear();
 		for(population::size_type i=0; i<pop_size; i++) {
@@ -110,6 +112,9 @@ void self_adaptive::evolve(population &pop) const
 		for(pagmo::population::size_type i=0; i<pop_new.size(); i++) {
 			pop.push_back(pop_new.get_individual(i).cur_x);
 		}
+
+		std::cout << "generation:" << k << std::endl;
+		std::cout << pop.champion() << std::endl;
 	}
 }
 

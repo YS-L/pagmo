@@ -34,17 +34,31 @@ int main()
 {
 	pagmo::problem::cec2006 prob_constrained(4);
 
-	pagmo::algorithm::sga algo(1); //only one generation for the algo!
+	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
+	pagmo::algorithm::sga algo(1,0.9,0.04); //only one generation for the algo!
+	//pagmo::algorithm::de algo(30); //only one generation for the algo!
 	pagmo::algorithm::self_adaptive algo_constrained(algo, 5000);
+
+	pagmo::population pop(prob_constrained,70);
+
+	for (size_t i=0; i<20; ++i) {
+		algo_constrained.evolve(pop);
+		std::cout << pop.champion();
+	}
 
 	std::cout << algo_constrained << std::endl;
 	std::cout << prob_constrained << std::endl;
 
-	pagmo::island isl = island(algo_constrained, prob_constrained, 70);
+//	pagmo::island isl = island(algo_constrained, prob_constrained, 70);
 
-	for (size_t i = 0; i< 20; ++i){
-		isl.evolve(1);
-		std::cout << isl.get_population().champion();
-	}
+//	for (size_t i=0; i<20; ++i){
+//		isl.evolve(1);
+//		std::cout << isl.get_population().champion();
+//	}
+
+
+
+
+
 	return 0;
 }
