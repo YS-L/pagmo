@@ -97,6 +97,9 @@ problem::base_ptr get_constrained_prob(problem::base_ptr prob, int i) {
 
 algorithm::base_ptr get_constrained_algo(algorithm::base_ptr algo, int i) {
 	switch(i) {
+//	case(3):
+//		return algorithm::self_adaptive(*algo).clone();
+//		break;
 	default:
 		return algo;
 		break;
@@ -110,6 +113,9 @@ std::string get_constrained_name(int i) {
 		break;
 	case(1):
 		return "Death_penalty_Kuri";
+		break;
+	case(3):
+		return "Self adaptive";
 		break;
 	default:
 		return "No_constraint_technique";
@@ -179,7 +185,7 @@ int main()
 	std::vector<std::string> stored_best_constraint_technique(probs.size(), "");
 
 	// for each constraints handling technique:
-	for(unsigned int ch=0; ch < 2; ch++) {
+	for(unsigned int ch=3; ch < 4; ch++) {
 
 		//Open the output file
 		std::ofstream myfile;
