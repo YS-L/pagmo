@@ -55,8 +55,13 @@ self_adaptive::self_adaptive(const base &problem, const population &pop):
 		pagmo_throw(value_error,"The original problem has no constraints.");
 	}
 
+	// check that the dimension of the problem is 1
+	if (m_original_problem->get_f_dimension() != 1) {
+		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with self adaptive meta problem.");
+	}
+
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
-	set_population(pop);
+	update_fitness(pop);
 }
 
 /// Copy Constructor. Performs a deep copy
@@ -72,7 +77,7 @@ self_adaptive::self_adaptive(const self_adaptive &prob):
 	m_solution_infeasibility(m_pop.size(),0.)
 {
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
-	set_population(m_pop);
+	update_fitness(m_pop);
 }
 
 /// Clone method.
@@ -85,32 +90,23 @@ base_ptr self_adaptive::clone() const
 /// (Wraps over the original implementation)
 void self_adaptive::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
-	constraint_vector c(m_original_problem->get_c_dimension(),0);
-	m_original_problem->compute_constraints(c,x);
+	// finds the position of the asked decision_vector
+	pagmo::population::size_type idx_x = -1;
 
-	if(m_original_problem->feasibility_c(c)) {
+	for(pagmo::population::size_type i=0; i<m_pop.size(); i++) {
+		const population::individual_type &current_individual = m_pop.get_individual(i);
+
+		if(current_individual.cur_x == x) {
+			idx_x = i;
+			break;
+		}
+	}
+	if(idx_x == -1) {
+		// if the original problem could not be found, it means that we are evaluating a new population
+		// in that case, we use the original problem
 		m_original_problem->objfun(f, x);
 	} else {
-		// finds the position of the asked decision_vector
-
-		pagmo::population::size_type idx_x = -1;
-
-		for(pagmo::population::size_type i=0; i<m_pop.size(); i++) {
-
-			const population::individual_type &current_individual = m_pop.get_individual(i);
-			if(current_individual.cur_x == x) {
-				idx_x = i;
-				break;
-			}
-		}
-		if(idx_x == -1) {
-			// if the original problem could not be found, it means that we are evaluating a new population
-			// in that case, we use the original problem
-			m_original_problem->objfun(f, x);
-			return;
-		} else {
-			f = m_fitness[idx_x];
-		}
+		f = m_fitness[idx_x];
 	}
 }
 
@@ -132,13 +128,19 @@ std::string self_adaptive::get_name() const
 	return m_original_problem->get_name() + " [self_adaptive]";
 }
 
-/// Sets the population and updates penalty coefficients.
+/// Sets the population.
 /**
- * Will update penalty coefficients based on the given popuation.
+ * Will update fitness as well based on the given popuation.
  */
 void self_adaptive::set_population(const population &pop)
 {
 	m_pop = pop;
+
+	update_fitness(pop);
+}
+
+void self_adaptive::update_fitness(const population &pop)
+{
 
 	// Let's store some useful variables.
 	const problem::base::size_type dimension = m_original_problem->get_dimension(), prob_i_dimension = m_original_problem->get_i_dimension();
@@ -163,14 +165,10 @@ void self_adaptive::set_population(const population &pop)
 	std::vector<pagmo::population::size_type> feasible_idx;
 	std::vector<pagmo::population::size_type> infeasible_idx;
 
-	// Main Self-Adaptive loop
-	//for (int k=0; k < m_gen; k++) {
-	// check if the population contains at least one individual that is non feasible
-
+	// store indexes of feasible and non feasible individuals
 	feasible_idx.clear();
 	infeasible_idx.clear();
 
-	// evaluates the scaling factor
 	for(pagmo::population::size_type i=0; i<pop_size; i++) {
 		const population::individual_type &current_individual = pop.get_individual(i);
 		if(m_original_problem->feasibility_x(current_individual.cur_x)) {
@@ -178,6 +176,17 @@ void self_adaptive::set_population(const population &pop)
 		} else {
 			infeasible_idx.push_back(i);
 		}
+	}
+
+	// reinitialize vectors
+	m_fitness.resize(pop_size,fitness_vector(1));
+
+	// check if the population contains at least one individual that is non feasible
+	if(infeasible_idx.size() == 0) {
+		for(pagmo::population::size_type i=0; i<pop_size; i++) {
+			m_fitness[i][0] = (m_pop.get_individual(feasible_idx.at(i)).cur_f)[0];
+		}
+		return;
 	}
 
 	// evaluate solutions infeasibility
@@ -188,8 +197,11 @@ void self_adaptive::set_population(const population &pop)
 	m_hat_down_idx = 0;
 	m_hat_up_idx = 0;
 
-	// first case
+	// first case, the population contains feasible solution
 	if(feasible_idx.size() > 0) {
+		// initialize hat_down_idx
+		m_hat_down_idx = feasible_idx.at(0);
+
 		// x_hat_down = feasible individual with lowest objective value in p
 		for(pagmo::population::size_type i=0; i < feasible_idx.size(); i++) {
 			const population::individual_type &current_individual = pop.get_individual(feasible_idx.at(i));
@@ -203,24 +215,27 @@ void self_adaptive::set_population(const population &pop)
 		decision_vector x_hat_down = pop.get_individual(m_hat_down_idx).cur_x;
 		fitness_vector f_hat_down =  pop.get_individual(m_hat_down_idx).cur_f;
 
-		// x_hat_up
+		// x_hat_up is computed depending if the population contains infeasible individual with objective
+		// function better than f_hat_down
 		bool pop_contains_infeasible_f_better_x_hat_down = false;
 		for(pagmo::population::size_type i=0; i < infeasible_idx.size(); i++) {
 			const population::individual_type &current_individual = pop.get_individual(infeasible_idx.at(i));
 
 			if(m_original_problem->compare_fitness(current_individual.cur_f, f_hat_down)) {
 				pop_contains_infeasible_f_better_x_hat_down = true;
-				// stores this individual as the first possible individual
+
 				m_hat_up_idx = infeasible_idx.at(i);
+
 				break;
 			}
 		}
 
 		if(pop_contains_infeasible_f_better_x_hat_down) {
+			// m_hat_up_idx is already initizalized
+
 			// gets the individual with maximum infeasibility and objfun lower than f_hat_down
 			for(pagmo::population::size_type i=0; i < infeasible_idx.size(); i++) {
-				const population::individual_type &current_individual =
-						pop.get_individual(infeasible_idx.at(i));
+				const population::individual_type &current_individual = pop.get_individual(infeasible_idx.at(i));
 
 				if( m_original_problem->compare_fitness(current_individual.cur_f, f_hat_down) &&
 					(m_solution_infeasibility.at(infeasible_idx.at(i)) >= m_solution_infeasibility.at(m_hat_up_idx)) ) {
@@ -239,8 +254,11 @@ void self_adaptive::set_population(const population &pop)
 			m_apply_penalty_1 = true;
 
 		} else { // the worst is the one that has the maximum infeasibility
+			// initialize m_hat_up_idx
+			m_hat_up_idx = infeasible_idx.at(0);
+
 			for(pagmo::population::size_type i=0; i < infeasible_idx.size(); i++) {
-				const population::individual_type &current_individual =pop.get_individual(infeasible_idx.at(i));
+				const population::individual_type &current_individual = pop.get_individual(infeasible_idx.at(i));
 
 				if( (m_solution_infeasibility.at(infeasible_idx.at(i)) >= m_solution_infeasibility.at(m_hat_up_idx)) ) {
 					if(m_solution_infeasibility.at(infeasible_idx.at(i)) == m_solution_infeasibility.at(m_hat_up_idx)) {
@@ -251,16 +269,18 @@ void self_adaptive::set_population(const population &pop)
 						m_hat_up_idx = infeasible_idx.at(i);
 					}
 				}
-
-				// do not apply penalty 1
-				m_apply_penalty_1 = false;
 			}
+
+			// do not apply penalty 1
+			m_apply_penalty_1 = false;
 		}
-		// hat up is now availlable
 
 	} else { // case where there is no feasible solution in the population
 		// best is the individual with the lowest infeasibility
-		for(pagmo::population::size_type i=0; i < pop_size; i++) {
+		m_hat_down_idx = 0;
+		m_hat_up_idx = 0;
+
+		for(pagmo::population::size_type i=0; i<pop_size; i++) {
 			if(m_solution_infeasibility.at(i) < m_solution_infeasibility.at(m_hat_down_idx)) {
 				m_hat_down_idx = i;
 			}
@@ -282,17 +302,21 @@ void self_adaptive::set_population(const population &pop)
 	for(pagmo::population::size_type i=0; i<pop_size; i++) {
 		const population::individual_type &current_individual = pop.get_individual(i);
 
-		if(m_original_problem->compare_fitness(current_individual.cur_f, pop.get_individual(m_hat_round_idx).cur_f)) {
+		if(!m_original_problem->compare_fitness(current_individual.cur_f, pop.get_individual(m_hat_round_idx).cur_f)) {
 			m_hat_round_idx = i;
 		}
 	}
 
+	// computes the objective function values of the three individuals
 	fitness_vector f_hat_round = m_original_problem->objfun(m_pop.get_individual(m_hat_round_idx).cur_x);;//pop.get_individual(m_hat_round_idx).cur_f;
 	fitness_vector f_hat_down = m_original_problem->objfun(m_pop.get_individual(m_hat_down_idx).cur_x);// pop.get_individual(m_hat_down_idx).cur_f;
 	fitness_vector f_hat_up = m_original_problem->objfun(m_pop.get_individual(m_hat_up_idx).cur_x);;// pop.get_individual(m_hat_up_idx).cur_f;
 
-	// evaluates the f_dot for all the current population
-	m_fitness.resize(pop_size,fitness_vector(1));
+	// evaluates the fitness for the current population
+	// feasible individuals fitness is the objective value
+	for(pagmo::population::size_type i=0; i<feasible_idx.size(); i++) {
+		m_fitness[feasible_idx.at(i)][0] = (m_pop.get_individual(feasible_idx.at(i)).cur_f)[0];
+	}
 
 	for(pagmo::population::size_type i=0; i<infeasible_idx.size(); i++) {
 		if(m_apply_penalty_1) {
@@ -318,31 +342,27 @@ void self_adaptive::set_population(const population &pop)
 
 	// apply penalty 2
 	for(pagmo::population::size_type i=0; i<infeasible_idx.size(); i++) {
-		m_fitness[infeasible_idx.at(i)][0] = m_fitness[infeasible_idx.at(i)][0] +
-				m_scaling_factor * std::abs(m_fitness[infeasible_idx.at(i)][0]) *
-				( (std::exp(2. * m_solution_infeasibility.at(infeasible_idx.at(i))) - 1.) / (std::exp(2.) - 1.));
+		const pagmo::population::size_type current_idx = infeasible_idx.at(i);
+
+		m_fitness[current_idx][0] = m_fitness[current_idx][0] +
+				m_scaling_factor * std::abs(m_fitness[current_idx][0]) *
+				( (std::exp(2. * m_solution_infeasibility.at(current_idx)) - 1.) / (std::exp(2.) - 1.) );
 	}
 
 	// find the maximum penalized value in the population
-	double max_penalized_value = m_fitness[0][0];
+	double max_penalized_value = m_fitness[infeasible_idx.at(0)][0];
 
 	for(pagmo::population::size_type i=0; i<infeasible_idx.size(); i++) {
+		// ?
 		max_penalized_value = std::max(max_penalized_value, m_fitness[infeasible_idx.at(i)][0]);
 	}
 
-
-	for(pagmo::population::size_type i=0; i<feasible_idx.size(); i++) {
-		m_fitness[feasible_idx.at(i)][0] = (m_pop.get_individual(feasible_idx.at(i)).cur_f)[0];
-	}
-
-	// sets the fitness (find the max penalized value)
-	for(pagmo::population::size_type i=0; i<infeasible_idx.size(); i++) {
-		max_penalized_value = std::max(max_penalized_value, m_fitness[infeasible_idx.at(i)][0]);
-	}
+	// sets the final fitness
 	for(pagmo::population::size_type i=0; i<pop_size; i++) {
 		m_fitness[i][0] = max_penalized_value - m_fitness[i][0];
 	}
 }
+
 
 void self_adaptive::compute_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop)
 {

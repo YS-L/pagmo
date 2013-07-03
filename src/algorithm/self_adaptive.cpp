@@ -94,10 +94,9 @@ void self_adaptive::evolve(population &pop) const
 
 	// Main Self-Adaptive loop
 	for (int k=0; k < m_gen; k++) {
-		// check if the population contains at least one individual that is non feasible
-
 		problem::self_adaptive prob_new(prob,pop); // Create the new problem;
 		population pop_new(prob_new);
+
 		for(population::size_type i=0; i<pop_size; i++) {
 			// Evaluate according to the new fitness;
 			pop_new.push_back(pop.get_individual(i).cur_x);

@@ -69,6 +69,7 @@ protected:
 
 private:
 	void compute_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop);
+	void update_fitness(const population &);
 
 private:
 	friend class boost::serialization::access;
