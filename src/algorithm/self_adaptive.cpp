@@ -95,8 +95,9 @@ void self_adaptive::evolve(population &pop) const
 	// Main Self-Adaptive loop
 	for (int k=0; k < m_gen; k++) {
 		problem::self_adaptive prob_new(prob,pop); // Create the new problem;
-		population pop_new(prob_new);
+		population pop_new(prob_new); // this is not good as it creates a new population....!
 
+		pop_new.clear();
 		for(population::size_type i=0; i<pop_size; i++) {
 			// Evaluate according to the new fitness;
 			pop_new.push_back(pop.get_individual(i).cur_x);
@@ -106,7 +107,7 @@ void self_adaptive::evolve(population &pop) const
 
 		// update the population pop
 		pop.clear();
-		for(pagmo::population::size_type i=0; i<pop_size; i++) {
+		for(pagmo::population::size_type i=0; i<pop_new.size(); i++) {
 			pop.push_back(pop_new.get_individual(i).cur_x);
 		}
 	}
