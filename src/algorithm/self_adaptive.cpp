@@ -73,13 +73,9 @@ void self_adaptive::evolve(population &pop) const
 {	
 	// Let's store some useful variables.
 	const problem::base &prob = pop.problem();
-	const problem::base::size_type dimension = prob.get_dimension(), prob_i_dimension = prob.get_i_dimension();
-	const decision_vector &lb = prob.get_lb(), &ub = prob.get_ub();
 	const population::size_type pop_size = pop.size();
-	const problem::base::size_type dimension_continuous = dimension - prob_i_dimension;
 
 	// get the constraints dimension
-	constraint_vector c(prob.get_c_dimension(),0);
 	problem::base::c_size_type prob_c_dimension = prob.get_c_dimension();
 
 	//We perform some checks to determine wether the problem/population are suitable for Self-Adaptive
@@ -92,12 +88,14 @@ void self_adaptive::evolve(population &pop) const
 		return;
 	}
 
-	problem::self_adaptive prob_new(prob,pop); // Create the new problem;
-	population pop_new(prob_new); // this is not good as it creates a new population....!
 
 	// Main Self-Adaptive loop
-	for (int k=0; k<m_gen; k++) {
+	for(int k=0; k<m_gen; k++) {
+		std::cout << "current generation: " << k << std::endl;
+		problem::self_adaptive prob_new(prob,pop); // Create the new problem;
+
 		prob_new.set_population(pop);
+		population pop_new(prob_new,0);
 
 		pop_new.clear();
 		for(population::size_type i=0; i<pop_size; i++) {
@@ -107,13 +105,25 @@ void self_adaptive::evolve(population &pop) const
 
 		m_original_algo->evolve(pop_new);
 
+		//5 - Reinsert best individual every m_elitism generations
+		if (k % 1 == 0) {
+			int worst=0;
+			for (pagmo::population::size_type i = 1; i<pop_new.size();i++) {
+				if ( prob.compare_x(pop_new.get_individual(worst).cur_x,pop_new.get_individual(i).cur_x) ) worst=i;
+			}
+
+			//updates x and v (cache avoids to recompute the objective function)
+			pop_new.set_x(worst,pop.champion().x);
+			// do we need to update v as well?
+		}
+
 		// update the population pop
 		pop.clear();
 		for(pagmo::population::size_type i=0; i<pop_new.size(); i++) {
 			pop.push_back(pop_new.get_individual(i).cur_x);
 		}
 
-		std::cout << "generation:" << k << std::endl;
+
 		std::cout << pop.champion() << std::endl;
 	}
 }
