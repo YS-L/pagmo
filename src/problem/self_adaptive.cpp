@@ -86,6 +86,11 @@ base_ptr self_adaptive::clone() const
 
 /// Implementation of the objective function.
 /// (Wraps over the original implementation)
+/**
+ *  Returns the penalized fitness if the decision vector is found in the
+ *  given population or the non penalized objective function of the underlying
+ *  problem otherwise.
+ */
 void self_adaptive::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
 	// finds the position of the asked decision_vector
@@ -131,7 +136,7 @@ std::string self_adaptive::get_name() const
 
 /// Sets the population.
 /**
- * Will update fitness as well based on the given popuation.
+ *  Will update fitness as well based on the given popuation.
  */
 void self_adaptive::set_population(const population &pop)
 {
@@ -144,6 +149,11 @@ void self_adaptive::set_population(const population &pop)
 	update_fitness(m_pop);
 }
 
+/// Updates the fitness information based on the population.
+/**
+ *  By calling this method, penalties coefficients and
+ *  fitnesses for the whole given population are computed.
+ */
 void self_adaptive::update_fitness(const population &pop)
 {
 	// Let's store some useful variables.
@@ -329,16 +339,13 @@ void self_adaptive::update_fitness(const population &pop)
 
 	scaling_factor = 0.;
 	// evaluates scaling factor
-	if(m_original_problem->compare_fitness(f_hat_up, f_hat_down)) {
-	//if(f_hat_up[0] <= f_hat_down[0]) {
+	if(m_original_problem->compare_fitness(f_hat_down, f_hat_up)) {
+		scaling_factor = (f_hat_round[0] - f_hat_up[0]) / f_hat_up[0];
+	} else {
 		scaling_factor = (f_hat_round[0] - f_hat_down[0]) / f_hat_down[0];
 	}
 	if(f_hat_up[0] == f_hat_round[0]) {
 		scaling_factor = 0.;
-	}
-	if(m_original_problem->compare_fitness(f_hat_down, f_hat_up)) {
-	//if(f_hat_up[0] > f_hat_down[0]) {
-		scaling_factor = (f_hat_round[0] - f_hat_up[0]) / f_hat_up[0];
 	}
 
 	// apply penalty 2
@@ -365,6 +372,12 @@ void self_adaptive::update_fitness(const population &pop)
 //	}
 }
 
+/// Computes teh solution infeasibility measure.
+/**
+ * Updates the solution infeasibility vector with the population given.
+ * @param[in,out] std::vector<double solution infeasibility vector to update.
+ * @param[in] population pop.
+ */
 void self_adaptive::compute_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop)
 {
 	// Let's store some useful variables.

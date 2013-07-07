@@ -35,12 +35,15 @@
 
 namespace pagmo { namespace algorithm {
 
-/// Self-Adaptive Fitness constraints handling
+/// Self-Adaptive Fitness constraints handling meta-algorithm
 /**
  *
- * Seld-Adaptive Fitness constraints handling is a meta-algorithm that allow to solve constrained optimization problems.
- * THe key idea of this constraint handling technique is to reprent the constraint violation by a single infeasibility measure,
- * and to adapt dynamically the penalization of infeasible solutions.
+ * Seld-Adaptive Fitness constraints handling is a meta-algorithm that allow
+ * to solve constrained optimization problems. The key idea of this constraint
+ * handling technique is to represent the constraint violation by a single
+ * infeasibility measure, and to adapt dynamically the penalization of infeasible solutions.
+ *
+ * This meta-algorithm is based on the problem self-adaptive.
  *
  * @see Farmani, R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
  * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.

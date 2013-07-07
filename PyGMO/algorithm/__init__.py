@@ -568,6 +568,23 @@ def _monte_carlo_ctor(self, iter = 10000):
 monte_carlo._orig_init = monte_carlo.__init__
 monte_carlo.__init__ = _monte_carlo_ctor
 
+def _self_adaptive_ctor(self, algorithm = _algorithm.sga(), max_iter = 100):
+	"""
+	Constructs a Seld-Adaptive Fitness constraints handling Meta Algorithm
+	
+	USAGE: algorithm.self_adaptive(algorithm = algorithm.sga(),population);
+
+	* algorithm: original optimizer
+	* max_iter: stop-criteria (number of iterations)
+	"""
+	# We set the defaults or the kwargs
+	arg_list=[]
+	arg_list.append(algorithm)
+	arg_list.append(max_iter)
+	self._orig_init(*arg_list)
+self_adaptive._orig_init = self_adaptive.__init__
+self_adaptive.__init__ = _self_adaptive_ctor
+
 #NLOPT algorithms (only if PyGMO has been compiled woth nlopt option activated)
 if "nlopt" in str(_get_algorithm_list()):
 	def _nlopt_bobyqa_ctor(self, max_iter = 100, ftol = 1e-6, xtol = 1e-6):

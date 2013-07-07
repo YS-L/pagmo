@@ -243,6 +243,10 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	// Simulated annealing, Corana's version.
 	algorithm_wrapper<algorithm::sa_corana>("sa_corana","Simulated annealing, Corana's version with adaptive neighbourhood.")
 		.def(init<optional<int, const double &, const double &, int,int,const double &> >());
+		
+	// Self-Adaptive meta-algorithm.
+	algorithm_wrapper<algorithm::self_adaptive>("self_adaptive","Self adaptive constraints handling meta-algorithm.")
+		.def(init<optional<const algorithm::base &, const int> >());
 
 	// GSL algorithms.
 	#ifdef PAGMO_ENABLE_GSL

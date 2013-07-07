@@ -643,3 +643,32 @@ def _death_penalty_ctor(self, problem = None, method = None):
 	self._orig_init(*arg_list)
 death_penalty._orig_init = death_penalty.__init__
 death_penalty.__init__ = _death_penalty_ctor
+
+
+def _self_adaptive_ctor(self, problem = None, population = None):
+	"""
+	Implements a meta-problem class that wraps some other constrained problems,
+	resulting in self adaptive constraints handling.
+	The key idea of this constraint handling technique is to represent the
+	constraint violation by a single infeasibility measure, and to adapt
+	dynamically the penalization of infeasible solutions. As the penalization
+	process depends on a given population, this implementation is valid for
+	the provided population only.
+	
+	USAGE: problem.(problem=PyGMO.cec2006(4), population)
+
+	* problem: PyGMO constrained problem one wants to treat with a self adaptive approach
+	* population: Population used to compute penalized fitnesses
+	"""
+
+	# We construct the arg list for the original constructor exposed by boost_python
+	arg_list=[]
+	if problem == None:
+		problem = cec2006(4)
+	if population == None:
+		population = population(problem)
+	arg_list.append(problem)
+	arg_list.append(population)
+	self._orig_init(*arg_list)
+self_adaptive._orig_init = self_adaptive.__init__
+self_adaptive.__init__ = _self_adaptive_ctor

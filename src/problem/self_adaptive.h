@@ -37,11 +37,13 @@ namespace pagmo{ namespace problem {
 /// Constrainted self adaptive meta-problem
 /**
  * Implements a meta-problem class that wraps some other constrained problems,
- * resulting in death penalty constraints handling.
+ * resulting in self adaptive constraints handling.
  *
  * The key idea of this constraint handling technique is to represent the
  * constraint violation by a single infeasibility measure, and to adapt
- * dynamically the penalization of infeasible solutions.
+ * dynamically the penalization of infeasible solutions. As the penalization
+ * process depends on a given population, this implementation is valid for
+ * the provided population only.
  *
  * @see R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
  * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.
@@ -60,7 +62,7 @@ public:
 	base_ptr clone() const;
 	std::string get_name() const;
 
-	//update
+	//update penalty and fitnesses with the population
 	void set_population(const population &pop);
 
 protected:
@@ -79,6 +81,7 @@ private:
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_problem;
 		ar & m_pop;
+		ar & m_fitness;
 	}
 	base_ptr m_original_problem;
 	population m_pop;

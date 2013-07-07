@@ -88,7 +88,6 @@ void self_adaptive::evolve(population &pop) const
 		return;
 	}
 
-
 	// Main Self-Adaptive loop
 	for(int k=0; k<m_gen; k++) {
 		std::cout << "current generation: " << k << std::endl;
