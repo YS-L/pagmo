@@ -43,9 +43,18 @@ namespace pagmo { namespace algorithm {
 
 /// Constructor.
 /**
- * Constructs a vega algorithm
+ * Allows to specify in detail all the parameters of the vega multi-objective algorithm.
  *
- * @param[in] algo pagmo::algorithm to use as multi-objective algorithm
+ * @param[in] gen Number of generations to evolve.
+ * @param[in] cr Crossover probability (of each allele if binomial crossover)
+ * @param[in] m Mutation probability (of each allele)
+ * @param[in] elitism The best individual is reinserted in the population each elitism generations
+ * @param[in] mut Mutation type. One of sga::mutation::GAUSSIAN, sga::mutation::RANDOM
+ * @param[in] width Mutation width. When gaussian mutation is selected is the width of the mutation
+ * @param[in] cro Crossover type. One of sga::crossover::BINOMIAL, sga::crossover::EXPONENTIAL
+ * @throws value_error if gen is negative, crossover probability is not \f$ \in [0,1]\f$, mutation probability is not \f$ \in [0,1]\f$,
+ * elitism is <=0
+ *
  */
 vega::vega(int gen, const double &cr, const double &m, int elitism, mutation::type mut, double width, crossover::type cro)
 	:base(),m_gen(gen),m_cr(cr),m_m(m),m_elitism(elitism),m_mut(mut,width),m_cro(cro)
@@ -75,7 +84,7 @@ base_ptr vega::clone() const
 
 /// Evolve implementation.
 /**
- * Run the vega algorithm
+ * Run the vega algorithm for the number of generations specified in the constructors.
  *
  * @param[in,out] pop input/output pagmo::population to be evolved.
  */
@@ -126,7 +135,7 @@ void vega::evolve(population &pop) const
 	std::vector<double> cumsum(sub_pop_size);
 	std::vector<double> cumsumTemp(sub_pop_size);
 
-	std::vector <int> selection(sub_pop_size);
+	std::vector<population::size_type> selection(sub_pop_size);
 
 	// Initialise the chromosomes and their fitness to that of the initial deme
 	for (pagmo::population::size_type i = 0; i<NP; i++ ) {
@@ -137,13 +146,12 @@ void vega::evolve(population &pop) const
 	// Find the best member and store in bestX and bestfit
 	fitness_vector bestfit;
 	decision_vector bestX(D,0);
-	double bestidx = pop.get_best_idx();
+	population::size_type bestidx = pop.get_best_idx();
 	bestX = pop.get_individual(bestidx).cur_x;
 	bestfit = pop.get_individual(bestidx).cur_f;
 
 	// creates new sub problems using the decompose meta-problem
 	std::vector<problem::base_ptr> sub_probs;
-	// std::vector< std::vector<population::size_type> > sub_idx(prob_f_dimension);
 	std::vector< std::vector<decision_vector> > sub_x(prob_f_dimension);
 	std::vector< std::vector<fitness_vector> > sub_f(prob_f_dimension);
 
@@ -163,24 +171,22 @@ void vega::evolve(population &pop) const
 		//We create some pseudo-random permutation of the poulation indexes
 		std::random_shuffle(X.begin(),X.end(),p_idx);
 
-		// Initialise the fitness with each problems
+		// Initialise the fitness with each problem
 		for(unsigned int sp_idx=0; sp_idx<prob_f_dimension; sp_idx++) {
 			problem::base_ptr current_sub_prob = sub_probs.at(sp_idx);
 			std::vector<fitness_vector> &current_sub_f = sub_f[sp_idx];
 			std::vector<decision_vector> &current_sub_x = sub_x[sp_idx];
-			//std::vector<population::size_type> &current_sub_idx = sub_idx[sp_idx];
 
 			current_sub_f = std::vector<fitness_vector>(sub_pop_size);
 			current_sub_x = std::vector<decision_vector>(sub_pop_size);
 
 			population::size_type sub_pop_begin_idx = sp_idx*sub_pop_size;
 
-			// for each individuals of the current subpopulation
+			// for each individual of the current subpopulation
 			for(pagmo::population::size_type k=0; k<sub_pop_size; k++) {
 				// initialize design and fitness vectors
 				current_sub_x[k] = X.at(sub_pop_begin_idx + k);
 				current_sub_f[k] = current_sub_prob->objfun(current_sub_x[k]);
-				// current_sub_idx[j] = ;
 			}
 		}
 

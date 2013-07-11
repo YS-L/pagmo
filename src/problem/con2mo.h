@@ -40,13 +40,13 @@ namespace pagmo{ namespace problem {
  * resulting in multi-objective problem.
  *
  * Three implementations of the constrained to multi-objective are available. For a problem with m constraints,
- * m+1 objective functions, the first objective function is the original objective function.
+ * m+nobj objective functions, the first objectives functions are the original objective functions.
  * The first implementation is the constrained to multi-objective defined by Coello Coello. The
  * objectives defined from constraints includes number of violated constraints and objective functions.
- * The second implementation is the COMOGA multi-objective problem: a biobjective problem with the second
+ * The second implementation is the COMOGA multi-objective problem: a nobj+1 problem with the last
  * objective the sum of the violations of the constraints.
  * The third implementation is the same as the second one but splitting the sum of violations between equality
- * and inequality constraints, resulting in a total of three objectives problem.
+ * and inequality constraints, resulting in a total of nobj+2 objectives problem.
  *
  * @see Coello Coello, C. A. (2002). Theoretical and numerical constraint-handling techniques used with evolutionary algorithms: a survey of the state of the art. Computer methods in applied mechanics and engineering, 191(11), 1245-1287.
  *
@@ -60,12 +60,15 @@ class __PAGMO_VISIBLE con2mo : public base
 	public:
 		/// Type of constraints to multi-objective.
 		/**
-		* Definition of two types of constrained to multi-objective.
-		* Simple distributes the objective and constraints to m+1 objective functions
-		* defined with the objective function as first objective and clipped positive
-		* constraints values for others. COELLO one is the same as Simple but
-		* objectives due to constraints includes number of violated constraints and
-		* objective function as well
+		* Definition of three types of constrained to multi-objective.
+		* OBJ_CSTRS is the approach suggest by Coello: the single objective constrained problem is transformed into
+		* a multiobjective unconstrained problem with m+1 objectives functions (where m is the number of constraints)
+		* OBJ_CSTRSVIO: the single objective constrained problem is transformed into a nobj+1 objectives unconstrained 
+		* problem with the original fitness functions as first objectives and the aggregation of the constraints violation 
+		* as last objective
+		* OBJ_EQVIO_INEQVIO: the single objective constrained problem is transformed into a nobj+2 objectives unconstrained 
+		* problem with the original fitness functions as first objectives, the aggregation of the inequality constraints violations 
+		* as second last objective and the sum of violation of the equality constraints violations as last objective.
 		*/
 		// con2mo methods
 		enum method_type {OBJ_CSTRS = 0, OBJ_CSTRSVIO = 1, OBJ_EQVIO_INEQVIO = 2};

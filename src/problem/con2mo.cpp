@@ -34,7 +34,7 @@ static int __mo_dimension__(const pagmo::problem::base &original_problem,
 							const pagmo::problem::con2mo::method_type method)
 {
 	if( method > 2 || method < 0) {
-		pagmo_throw(value_error, "The constrained to multi-objective method must be set to OBJ_CSTRS for Coello type constrained to multi-objective, to OBJ_CSTRSVIO for COMOGO type constrained to bi-objective problem or to OBJ_EQVIO_INEQVIO for COMOGO type constrained to three-objective problem.");
+		pagmo_throw(value_error, "The constrained to multi-objective method must be set to OBJ_CSTRS for Coello type constrained to multi-objective, to OBJ_CSTRSVIO for COMOGO type constrained to nobj+1 objectives problem or to OBJ_EQVIO_INEQVIO for COMOGO type constrained to nobj+2 objectives problem.");
 	}
 
 	if(original_problem.get_c_dimension() <= 0){
@@ -73,9 +73,8 @@ namespace pagmo { namespace problem {
  *
  * @param[in] problem base::problem to be modified to use a constrained to
  * multi-objective handling technique.
- * @param[in] method method_type to be modified to use a simple constrained
- * to multi-objective if defined with SIMPLE and a Coello constrained to
- * multi-objective with COELLO.
+ * @param[in] method method_type to be modified to use a single constrained
+ * to multi-objective approach defined with OBJ_CSTRS, OBJ_CSTRSVIO or OBJ_EQVIO_INEQVIO
  *
  */
 con2mo::con2mo(const base &problem, const method_type method):
@@ -196,7 +195,7 @@ void con2mo::objfun_impl(fitness_vector &f, const decision_vector &x) const
 		break;
 	}
 	default:
-		pagmo_throw(value_error, "Error: There are only 3 methods for the constraints to multi-objective!");
+		pagmo_throw(value_error, "Error: There are only 3 methods for the constrained to multi-objective!");
 		break;
 	}
 }
@@ -209,7 +208,7 @@ std::string con2mo::human_readable_extra() const
 {
 	std::ostringstream oss;
 	oss << m_original_problem->human_readable_extra() << std::endl;
-	oss << "\n\tConstraints handled with constraints to multi-objective, method ";
+	oss << "\n\tConstraints handled with constrained to multi-objective, method ";
 	switch(m_method){
 	case OBJ_CSTRS: {
 		oss << "OBJ_CSTRS ";
