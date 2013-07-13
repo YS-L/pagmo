@@ -22,50 +22,52 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_ALGORITHM_CO_EVOL_H
-#define PAGMO_ALGORITHM_CO_EVOL_H
+#ifndef PAGMO_PROBLEM_CSTRS_CO_EVOLUTION_H
+#define PAGMO_PROBLEM_CSTRS_CO_EVOLUTION_H
 
 #include <string>
 
-#include "../config.h"
-#include "../population.h"
 #include "../serialization.h"
+#include "../types.h"
+#include "cec2006.h"
 #include "base.h"
-#include "cs.h"
 
-namespace pagmo { namespace algorithm {
+namespace pagmo{ namespace problem {
 
-/// Self-Adaptive Fitness constraints handling meta-algorithm
+/// Constrainted co evolution meta-problem
 /**
+ * Implements a meta-problem class that wraps some other constrained problems,
+ * resulting in self adaptive constraints handling.
  *
- * Seld-Adaptive Fitness constraints handling is a meta-algorithm that allow
- * to solve constrained optimization problems. The key idea of this constraint
- * handling technique is to represent the constraint violation by a single
- * infeasibility measure, and to adapt dynamically the penalization of infeasible solutions.
+ * The key idea of this constraint handling technique is to .
  *
- * This meta-algorithm is based on the problem self-adaptive.
- *
- * @see Farmani, R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
+ * @see R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
  * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.
  *
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */
-		
-class __PAGMO_VISIBLE co_evol: public base
+
+class __PAGMO_VISIBLE cstrs_co_evolution : public base
 {
 public:
-	co_evol(const base & = cs(), int gen = 1, int = 30);
-	co_evol(const co_evol &);
-	base_ptr clone() const;
+	//constructors
+	cstrs_co_evolution(const base & = cec2006(4));
 
-public:
-	void evolve(population &) const;
+	//copy constructor
+	cstrs_co_evolution(const cstrs_co_evolution &);
+	base_ptr clone() const;
 	std::string get_name() const;
-	base_ptr get_algorithm() const;
-	void set_algorithm(const base &);
+
+	void set_penalty_coeff(const std::vector<double> &);
 
 protected:
 	std::string human_readable_extra() const;
+	void objfun_impl(fitness_vector &, const decision_vector &) const;
+
+private:
+	//void compute_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop);
+
+	void compute_penalty(double &, int &, const std::vector<double> &) const;
 
 private:
 	friend class boost::serialization::access;
@@ -73,23 +75,15 @@ private:
 	void serialize(Archive &ar, const unsigned int)
 	{
 		ar & boost::serialization::base_object<base>(*this);
-		ar & m_original_algo;
-		ar & const_cast<int &>(m_gen);
+		ar & m_original_problem;
+		ar & m_penalty_coeff;
 	}
-	base_ptr m_original_algo;
-	//Number of generations
-	const int m_gen;
-	// population 2 size
-	int m_pop_2_size;
-
-	// genetic algoritms operators
-	std::vector<int> selection(const std::vector<decision_vector> &, const std::vector<fitness_vector> &, const problem::base &) const;
-	void crossover(std::vector<decision_vector> &pop_x) const;
-	void mutate(std::vector<decision_vector> &pop_x, const problem::base &prob) const;
+	base_ptr m_original_problem;
+	std::vector<double> m_penalty_coeff;
 };
 
 }} //namespaces
 
-BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::co_evol);
+BOOST_CLASS_EXPORT_KEY(pagmo::problem::cstrs_co_evolution);
 
-#endif // PAGMO_ALGORITHM_co_evol_H
+#endif // PAGMO_PROBLEM_cstrs_co_evolution_H

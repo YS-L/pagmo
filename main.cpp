@@ -32,27 +32,35 @@ using namespace pagmo;
 
 int main()
 {
-	pagmo::problem::zdt1 orig_prob(10);
+	pagmo::problem::cec2006 prob_constrained(4);
 
-	std::vector<double> weights(2,0.5);
-	pagmo::problem::decompose decomposed_problem(orig_prob, weights);
+	//pagmo::algorithm::monte_carlo algo(1); //only one generation for the algo!
+	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
+	pagmo::algorithm::sga algo(25,0.9,0.04, 1000,
+							   algorithm::sga::mutation::GAUSSIAN, 0.1,
+							   algorithm::sga::selection::ROULETTE,
+							   algorithm::sga::crossover::EXPONENTIAL); //only one generation for the algo!
+	//pagmo::algorithm::cmaes algo(1); //only one generation for the algo!
+	//pagmo::algorithm::de algo(30); //only one generation for the algo!
+	pagmo::algorithm::co_evol algo_constrained(algo, 20, 30);
 
-	pagmo::algorithm::jde alg(50);
+	std::cout << algo_constrained;
 
-	std::cout << alg << std::endl;
-	std::cout << orig_prob << std::endl;
-	std::cout << decomposed_problem << std::endl;
-
-	pagmo::island isl = island(alg, decomposed_problem, 100);
-	pagmo::population original_problem_pop = population(orig_prob, 1);
-
-	for (size_t i = 0; i< 10; ++i){
-	    isl.evolve(1);
-	    original_problem_pop.set_x(0, isl.get_population().champion().x);
-	    std::cout << "Distance from Pareto Front (p-distance): " << orig_prob.p_distance(original_problem_pop) << std::endl;
-	    std::cout << "Original fitness: " << orig_prob.objfun(isl.get_population().champion().x) << std::endl;
-	    std::cout << "Decomposed fitness: " << decomposed_problem.objfun(isl.get_population().champion().x) << std::endl;
-
+	for (size_t i=0; i<20; ++i) {
+		pagmo::population pop(prob_constrained,60);
+		algo_constrained.evolve(pop);
+		std::cout << pop.champion();
 	}
+
+	std::cout << algo_constrained << std::endl;
+	std::cout << prob_constrained << std::endl;
+
+//	pagmo::island isl = island(algo_constrained, prob_constrained, 70);
+
+//	for (size_t i=0; i<20; ++i){
+//		isl.evolve(1);
+//		std::cout << isl.get_population().champion();
+//	}
+
 	return 0;
 }
