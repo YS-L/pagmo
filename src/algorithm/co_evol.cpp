@@ -125,9 +125,13 @@ void co_evol::evolve(population &pop) const
 
 	decision_vector dummy(pop_2_x_size,10.); //used for initialisation purposes
 	for(population::size_type i=0; i<sub_pop_2_size; i++) {
+		sub_pop_2_x[i] = decision_vector(pop_2_x_size,0.);
+
 		// choose random coefficients between 1 and 1000
-		double random = boost::uniform_real<double>(1.,1000.)(m_drng);
-		sub_pop_2_x[i] = decision_vector(pop_2_x_size,random);
+		for(int j = 0; j<pop_2_x_size;j++)
+		{
+			sub_pop_2_x[i][j] = boost::uniform_real<double>(1.,1000.)(m_drng);
+		}
 		sub_pop_2_f[i] = fitness_vector(1);
 	}
 
