@@ -399,7 +399,7 @@ BOOST_PYTHON_MODULE(_problem) {
 	// Self adaptive meta-problem
 	problem_wrapper<problem::self_adaptive>("self_adaptive","Constrained self adaptive problem")
 		.def(init<optional<const problem::base &, const population &> >())
-		.add_property("population", &problem::self_adaptive::set_population);
+		.add_property("population", &problem::self_adaptive::update_penalty_coeff);
 
 	// Shifted meta-problem
 	problem_wrapper<problem::shifted>("shifted","Shifted problem")

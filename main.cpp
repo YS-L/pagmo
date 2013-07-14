@@ -32,7 +32,7 @@ using namespace pagmo;
 
 int main()
 {
-	pagmo::problem::cec2006 prob_constrained(6);
+	pagmo::problem::cec2006 prob_constrained(7);
 
 	//pagmo::algorithm::monte_carlo algo(1); //only one generation for the algo!
 	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
@@ -41,7 +41,8 @@ int main()
 							   algorithm::sga::selection::ROULETTE,
 							   algorithm::sga::crossover::EXPONENTIAL); //only one generation for the algo!
 	//pagmo::algorithm::cmaes algo(1); //only one generation for the algo!
-	//pagmo::algorithm::de algo(30); //only one generation for the algo!
+	//pagmo::algorithm::de algo(1); //only one generation for the algo!
+	//pagmo::algorithm::pso algo(1); //only one generation for the algo!
 	pagmo::algorithm::self_adaptive algo_constrained(algo, 5000);
 
 	std::cout << algo_constrained;

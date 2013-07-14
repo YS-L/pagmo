@@ -39,6 +39,9 @@ namespace pagmo{ namespace problem {
  * Implements a meta-problem class that wraps some other constrained problems,
  * resulting in self adaptive constraints handling.
  *
+ * This meta problem is not intended to be used alone.
+ * It has been set to be used by the self-adaptive meta-algorithm.
+ *
  * The key idea of this constraint handling technique is to represent the
  * constraint violation by a single infeasibility measure, and to adapt
  * dynamically the penalization of infeasible solutions. As the penalization
@@ -63,15 +66,16 @@ public:
 	std::string get_name() const;
 
 	//update penalty and fitnesses with the population
-	void set_population(const population &pop);
+	void update_penalty_coeff(const population &pop);
 
 protected:
 	std::string human_readable_extra() const;
 	void objfun_impl(fitness_vector &, const decision_vector &) const;
 
 private:
-	void compute_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop);
-	void update_fitness(const population &);
+	void update_c_scaling(const population &pop);
+	double compute_solution_infeasibility(const decision_vector &x) const;
+	void compute_pop_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop);
 
 private:
 	friend class boost::serialization::access;
@@ -80,13 +84,30 @@ private:
 	{
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_problem;
-		ar & m_pop;
-		ar & m_fitness;
+		ar & const_cast<bool &>(m_apply_penalty_1);
+		ar & m_scaling_factor;
+		ar & m_c_scaling;
+		ar & m_f_hat_down;
+		ar & m_f_hat_up;
+		ar & m_f_hat_round;
+		ar & m_i_hat_down;
+		ar & m_i_hat_up;
+		ar & m_i_hat_round;
 	}
 	base_ptr m_original_problem;
-	population m_pop;
 
-	std::vector<fitness_vector> m_fitness;
+	bool m_apply_penalty_1;
+	double m_scaling_factor;
+
+	constraint_vector m_c_scaling;
+
+	fitness_vector m_f_hat_down;
+	fitness_vector m_f_hat_up;
+	fitness_vector m_f_hat_round;
+
+	double m_i_hat_down;
+	double m_i_hat_up;
+	double m_i_hat_round;
 };
 
 }} //namespaces

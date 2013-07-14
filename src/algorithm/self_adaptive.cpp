@@ -68,9 +68,8 @@ base_ptr self_adaptive::clone() const
  *
  * @param[in,out] pop input/output pagmo::population to be evolved.
  */
-
 void self_adaptive::evolve(population &pop) const
-{	
+{
 	// Let's store some useful variables.
 	const problem::base &prob = pop.problem();
 	const population::size_type pop_size = pop.size();
@@ -88,12 +87,16 @@ void self_adaptive::evolve(population &pop) const
 		return;
 	}
 
+	problem::self_adaptive prob_new(prob,pop); // Create the new problem;
+
 	// Main Self-Adaptive loop
 	for(int k=0; k<m_gen; k++) {
 		std::cout << "current generation: " << k << std::endl;
-		problem::self_adaptive prob_new(prob,pop); // Create the new problem;
 
-		prob_new.set_population(pop);
+		// Need to reset the cache?
+		prob_new.reset_caches();
+
+		prob_new.update_penalty_coeff(pop);
 		population pop_new(prob_new,0);
 
 		pop_new.clear();
@@ -102,18 +105,25 @@ void self_adaptive::evolve(population &pop) const
 			pop_new.push_back(pop.get_individual(i).cur_x);
 		}
 
+		// this constraints handling technique is initially inteded to be
+		// used as a fitness evaluator for ES, I am not convinced this is the easiest
+		// way to implement it. But for DE, PSO in example, there is no fitness evaluator?
 		m_original_algo->evolve(pop_new);
 
 		//5 - Reinsert best individual every m_elitism generations
+		// Uses the constrained problem. If we don't do that, we loose the best individual...
+		// Should we impose a certain porcentage of the best ones?
 		if (k % 1 == 0) {
 			int worst=0;
 			for (pagmo::population::size_type i = 1; i<pop_new.size();i++) {
 				if ( prob.compare_x(pop_new.get_individual(worst).cur_x,pop_new.get_individual(i).cur_x) ) worst=i;
 			}
 
+			decision_vector dummy = pop.champion().x;
+			std::transform(dummy.begin(), dummy.end(), pop.get_individual(worst).cur_x.begin(), dummy.begin(),std::minus<double>());
 			//updates x and v (cache avoids to recompute the objective function)
 			pop_new.set_x(worst,pop.champion().x);
-			// do we need to update v as well?
+			pop_new.set_v(worst,dummy);
 		}
 
 		// update the population pop
@@ -121,7 +131,6 @@ void self_adaptive::evolve(population &pop) const
 		for(pagmo::population::size_type i=0; i<pop_new.size(); i++) {
 			pop.push_back(pop_new.get_individual(i).cur_x);
 		}
-
 
 		std::cout << pop.champion() << std::endl;
 	}

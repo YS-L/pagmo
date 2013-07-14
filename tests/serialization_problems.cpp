@@ -174,6 +174,11 @@ int main()
 	probs_new.push_back(problem::noisy(zdt1_before_transform1,111,1.0,4.5,
 					    problem::noisy::UNIFORM).clone());
 
+	//----- Test constraints handling meta-problems -----//
+	problem::cec2006 cec2006_before_cstrs_handling(7);
+	probs.push_back(problem::self_adaptive(cec2006_before_cstrs_handling).clone());
+	probs_new.push_back(problem::self_adaptive(cec2006_before_cstrs_handling).clone());
+
 #ifdef PAGMO_ENABLE_KEP_TOOLBOX
 	probs.push_back(problem::cassini_1(2).clone());
 	probs_new.push_back(problem::cassini_1().clone());
