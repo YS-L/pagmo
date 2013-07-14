@@ -48,7 +48,7 @@
 #include "algorithm/cmaes.h"
 #include "algorithm/aco.h"
 #include "algorithm/nsga2.h"
-#include "algorithm/co_evol.h"
+#include "algorithm/cstrs_co_evolution.h"
 
 // Hyper-heuristics
 #include "algorithm/mbh.h"

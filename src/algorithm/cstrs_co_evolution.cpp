@@ -35,7 +35,7 @@
 #include "../problem/cstrs_co_evolution.h"
 #include "../types.h"
 #include "base.h"
-#include "co_evol.h"
+#include "cstrs_co_evolution.h"
 
 namespace pagmo { namespace algorithm {
 
@@ -46,7 +46,7 @@ namespace pagmo { namespace algorithm {
  * @param[in] original_algo pagmo::algorithm to use as 'original' optimization method
  * @throws value_error if stop is negative
  */
-co_evol::co_evol(const base &original_algo, int gen, int pop_2_size):base(),m_gen(gen),m_pop_2_size(pop_2_size)
+cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, int gen, int pop_2_size):base(),m_gen(gen),m_pop_2_size(pop_2_size)
 {
 	m_original_algo = original_algo.clone();
 	if(gen < 0) {
@@ -58,13 +58,13 @@ co_evol::co_evol(const base &original_algo, int gen, int pop_2_size):base(),m_ge
 }
 
 /// Copy constructor.
-co_evol::co_evol(const co_evol &algo):base(algo),m_original_algo(algo.m_original_algo->clone()),m_gen(algo.m_gen),m_pop_2_size(algo.m_pop_2_size)
+cstrs_co_evolution::cstrs_co_evolution(const cstrs_co_evolution &algo):base(algo),m_original_algo(algo.m_original_algo->clone()),m_gen(algo.m_gen),m_pop_2_size(algo.m_pop_2_size)
 {}
 
 /// Clone method.
-base_ptr co_evol::clone() const
+base_ptr cstrs_co_evolution::clone() const
 {
-	return base_ptr(new co_evol(*this));
+	return base_ptr(new cstrs_co_evolution(*this));
 }
 
 /// Evolve implementation.
@@ -73,7 +73,7 @@ base_ptr co_evol::clone() const
  *
  * @param[in,out] pop input/output pagmo::population to be evolved.
  */
-void co_evol::evolve(population &pop) const
+void cstrs_co_evolution::evolve(population &pop) const
 {	
 	// Let's store some useful variables.
 	const problem::base &prob = pop.problem();
@@ -163,8 +163,9 @@ void co_evol::evolve(population &pop) const
 			m_original_algo->evolve(pop_1_instance);
 
 			// store indexes of feasible individuals
-			std::vector<population::size_type> feasible_idx(0);
+			std::vector<population::size_type> feasible_idx;
 
+			feasible_idx.clear();
 			for(population::size_type i=0; i<sub_pop_1_size; i++) {
 				const population::individual_type &current_individual = pop_1_instance.get_individual(i);
 
@@ -174,22 +175,32 @@ void co_evol::evolve(population &pop) const
 			}
 
 			// computes the average fitness
-			int number_of_feasible=feasible_idx.size();
+			int feasible_size = feasible_idx.size();
 			double average_fitness=0.;
-			for(int i=0; i<feasible_idx.size();i++) {
+			for(int i=0; i<feasible_size;i++) {
 				const population::individual_type &current_individual = pop_1_instance.get_individual(feasible_idx.at(i));
 
 				average_fitness += current_individual.cur_f.at(0);
 			}
-			// NEED TO DO THE SCALING OF THE AVERAGE FITNESS HERE TO AVOID
-			average_fitness = (average_fitness / number_of_feasible) + number_of_feasible;
+			average_fitness /= feasible_size;
+
+			// average scaling (NOT DETAILED IN COELLO PAPER)
+//			for(population::size_type i=1; i<sub_pop_1_size; i++) {
+//				const population::individual_type &current_individual = pop_1_instance.get_individual(i);
+
+//				if(prob.compare_fitness(worst_fitness , current_individual.cur_f)) {
+//					feasible_idx.push_back(i);
+//				}
+//			}
+
+			double average_scaling = 1.;
+			average_fitness = average_fitness * average_scaling + feasible_size;
 
 			// assuming minimization (convert to objective function)
 			average_fitness = - average_fitness;
 
 			// store the average fitness to the individual j
 			sub_pop_2_f[j][0] = average_fitness;
-
 
 			// how do we select the population pop ?
 			std::cout << pop_1_instance.champion() << std::endl;
@@ -213,11 +224,11 @@ void co_evol::evolve(population &pop) const
 
 		// elitism?
 
-		// we don't need to reevaluate the population 2
+		// we don't need to reevaluate the population 2 as only the decision vector is used
 		sub_pop_2_x = sub_pop_2_x_new;
 
-		for(population::size_type i = 0; i < sub_pop_2_size;i++)
-			std::cout << "sub_pop_2_x"<<i<< " " << sub_pop_2_x[i];
+		for(population::size_type i=0; i < sub_pop_2_size; i++)
+			std::cout << "sub_pop_2_x"<< i << " " << sub_pop_2_x[i];
 
 //		// updates the population 1
 //		for(int j=0; j<sub_pop_1_size; j++) {
@@ -227,12 +238,11 @@ void co_evol::evolve(population &pop) const
 
 	// we evaluate the population pop
 
-
 	std::cout << pop.champion() << std::endl;
 }
 
 /// Algorithm name
-std::string co_evol::get_name() const
+std::string cstrs_co_evolution::get_name() const
 {
 	return m_original_algo->get_name() + "[Co-Evolution]";
 }
@@ -241,7 +251,7 @@ std::string co_evol::get_name() const
 /**
  * @return algorithm::base_ptr to a copy of the internal local algorithm.
  */
-base_ptr co_evol::get_algorithm() const
+base_ptr cstrs_co_evolution::get_algorithm() const
 {
 	return m_original_algo->clone();
 }
@@ -252,7 +262,7 @@ base_ptr co_evol::get_algorithm() const
  *
  * @param[in] algo algorithm to be set as local algorithm.
  */
-void co_evol::set_algorithm(const base &algo)
+void cstrs_co_evolution::set_algorithm(const base &algo)
 {
 	m_original_algo = algo.clone();
 }
@@ -261,7 +271,7 @@ void co_evol::set_algorithm(const base &algo)
 /**
  * @return a formatted string displaying the parameters of the algorithm.
  */
-std::string co_evol::human_readable_extra() const
+std::string cstrs_co_evolution::human_readable_extra() const
 {
 	std::ostringstream s;
 	s << "algorithm: " << m_original_algo->get_name() << ' ';
@@ -270,7 +280,7 @@ std::string co_evol::human_readable_extra() const
 }
 
 
-std::vector<int> co_evol::selection(const std::vector<decision_vector> &pop_x, const std::vector<fitness_vector> &pop_f, const problem::base &prob) const
+std::vector<int> cstrs_co_evolution::selection(const std::vector<decision_vector> &pop_x, const std::vector<fitness_vector> &pop_f, const problem::base &prob) const
 {
 	int method = 1;
 
@@ -350,7 +360,7 @@ std::vector<int> co_evol::selection(const std::vector<decision_vector> &pop_x, c
 	return selection;
 }
 
-void co_evol::crossover(std::vector<decision_vector> &pop_x) const
+void cstrs_co_evolution::crossover(std::vector<decision_vector> &pop_x) const
 {
 	int cross_method=0;
 
@@ -402,7 +412,7 @@ void co_evol::crossover(std::vector<decision_vector> &pop_x) const
 	}
 }
 
-void co_evol::mutate(std::vector<decision_vector> &pop_x, const problem::base &prob) const
+void cstrs_co_evolution::mutate(std::vector<decision_vector> &pop_x, const problem::base &prob) const
 {
 	int method=0;
 
@@ -499,4 +509,4 @@ void co_evol::mutate(std::vector<decision_vector> &pop_x, const problem::base &p
 
 }} //namespaces
 
-BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::algorithm::co_evol);
+BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::algorithm::cstrs_co_evolution);

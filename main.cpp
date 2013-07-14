@@ -34,15 +34,15 @@ int main()
 {
 	pagmo::problem::cec2006 prob_constrained(4);
 
-	//pagmo::algorithm::monte_carlo algo(1); //only one generation for the algo!
-	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
-	pagmo::algorithm::sga algo(25,0.9,0.04, 1000,
-							   algorithm::sga::mutation::GAUSSIAN, 0.1,
-							   algorithm::sga::selection::ROULETTE,
-							   algorithm::sga::crossover::EXPONENTIAL); //only one generation for the algo!
-	//pagmo::algorithm::cmaes algo(1); //only one generation for the algo!
-	//pagmo::algorithm::de algo(30); //only one generation for the algo!
-	pagmo::algorithm::co_evol algo_constrained(algo, 20, 30);
+	//pagmo::algorithm::monte_carlo algo(1);
+	//pagmo::algorithm::sga algo(1);
+	//pagmo::algorithm::sga algo(25,0.9,0.04, 1000,
+	//						   algorithm::sga::mutation::GAUSSIAN, 0.1,
+	//						   algorithm::sga::selection::ROULETTE,
+	//						   algorithm::sga::crossover::EXPONENTIAL);
+	//pagmo::algorithm::cmaes algo(25);
+	pagmo::algorithm::de algo(25);
+	pagmo::algorithm::cstrs_co_evolution algo_constrained(algo, 20, 30);
 
 	std::cout << algo_constrained;
 

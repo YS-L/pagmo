@@ -22,8 +22,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_ALGORITHM_CO_EVOL_H
-#define PAGMO_ALGORITHM_CO_EVOL_H
+#ifndef PAGMO_ALGORITHM_CSTRS_CO_EVOLUTION_H
+#define PAGMO_ALGORITHM_CSTRS_CO_EVOLUTION_H
 
 #include <string>
 
@@ -51,11 +51,11 @@ namespace pagmo { namespace algorithm {
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */
 		
-class __PAGMO_VISIBLE co_evol: public base
+class __PAGMO_VISIBLE cstrs_co_evolution: public base
 {
 public:
-	co_evol(const base & = cs(), int gen = 1, int = 30);
-	co_evol(const co_evol &);
+	cstrs_co_evolution(const base & = cs(), int gen = 1, int = 30);
+	cstrs_co_evolution(const cstrs_co_evolution &);
 	base_ptr clone() const;
 
 public:
@@ -90,6 +90,6 @@ private:
 
 }} //namespaces
 
-BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::co_evol);
+BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::cstrs_co_evolution);
 
-#endif // PAGMO_ALGORITHM_co_evol_H
+#endif // PAGMO_ALGORITHM_CSTRS_CO_EVOLUTION_H
