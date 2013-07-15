@@ -98,10 +98,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 	// is necessary and it is not easy to locally update the fitness
 
 	// creates the problem 1
-	// TODO: CHANGE WITH CO EVOL
 	problem::cstrs_co_evolution prob_1(prob);
-
-	//population pop_2;
 
 	// sub population size
 	population::size_type sub_pop_1_size = pop_size;
@@ -137,97 +134,175 @@ void cstrs_co_evolution::evolve(population &pop) const
 
 	std::vector<decision_vector> sub_pop_2_x_new(sub_pop_2_size,dummy);
 
+	std::vector<population> sub_pop_1_instances;
+	sub_pop_1_instances.reserve(sub_pop_2_size);
+	std::vector< std::vector<population::size_type> > sub_pop_1_feasibles_idx;
+
 	// Main Co-Evolution loop
 	for(int k=0; k<m_gen; k++) {
 		std::cout << "current generation: " << k << std::endl;
 
-		// for each individuals of pop 2
+		for(population::size_type i=0; i < sub_pop_2_size; i++)
+			std::cout << "sub_pop_2_x" << i << " " << sub_pop_2_x[i] << std::endl;
 
+		// we initialize the vector of population and feasible indexes
+		sub_pop_1_instances.clear();
+		sub_pop_1_feasibles_idx.clear();
 		for(population::size_type j=0; j<sub_pop_2_size; j++) {
+			// use an instance of the population
+			sub_pop_1_instances.push_back(population(sub_pop_1));
+			sub_pop_1_feasibles_idx.push_back(std::vector<population::size_type>(0));
+		}
+
+		// for each individuals of pop 2, evolve the current population,
+		// and store the position of the feasible idx
+		for(population::size_type j=0; j<sub_pop_2_size; j++) {
+			// use an instance of the population
+			population &current_population = sub_pop_1_instances[j];
+
 			// set decision vector encoding penalty coefficients
 			// w1 and w2 in prob 1
 			prob_1.set_penalty_coeff(sub_pop_2_x.at(j));
 
 			// reevaluates the population 1 with these new coefficients
 			prob_1.reset_caches();
-			for(population::size_type i=0; i<sub_pop_2_size; i++) {
-				sub_pop_1.set_x(i,sub_pop_1.get_individual(i).cur_x);
+			for(population::size_type i=0; i<sub_pop_1_size; i++) {
+				current_population.set_x(i,sub_pop_1.get_individual(i).cur_x);
 			}
-
-			// use an instance of the population
-			population pop_1_instance(sub_pop_1);
 
 			// evolve the population 1 instance
 			// DO WE NEED TO CLONE THE ORIGINAL
 			// ALGO TO AVOID KEEPING THE ALGO HISTORY AS WELL?
-			m_original_algo->evolve(pop_1_instance);
+			m_original_algo->evolve(current_population);
 
-			// store indexes of feasible individuals
-			std::vector<population::size_type> feasible_idx;
+			// store the feasible idx
+			std::vector<population::size_type> &current_sub_pop_1_feasibles_idx = sub_pop_1_feasibles_idx[j];
 
-			feasible_idx.clear();
+			current_sub_pop_1_feasibles_idx.clear();
 			for(population::size_type i=0; i<sub_pop_1_size; i++) {
-				const population::individual_type &current_individual = pop_1_instance.get_individual(i);
+				const population::individual_type &current_individual = current_population.get_individual(i);
 
 				if(prob.feasibility_x(current_individual.cur_x)) {
-					feasible_idx.push_back(i);
+					current_sub_pop_1_feasibles_idx.push_back(i);
 				}
 			}
+		}
 
-			// computes the average fitness
-			int feasible_size = feasible_idx.size();
+		// gets the feasible worst fitness and best fitness for the full population
+		// average scaling defined from all the populations (NOT DETAILED IN COELLO PAPER)
+		double best_fitness = boost::numeric::bounds<double>::highest();
+		double worst_fitness = boost::numeric::bounds<double>::lowest();
+
+		for(population::size_type j=0; j<sub_pop_2_size; j++) {
+			population &current_population = sub_pop_1_instances[j];
+			std::vector< population::size_type> &current_feasible_idx = sub_pop_1_feasibles_idx[j];
+
+			population::size_type current_feasible_size = current_feasible_idx.size();
+
+			for(population::size_type i=0; i<current_feasible_size; i++) {
+				const population::individual_type &current_individual =
+						current_population.get_individual(current_feasible_idx.at(i));
+
+				if(worst_fitness < current_individual.cur_f.at(0)) {
+					worst_fitness = current_individual.cur_f.at(0);
+				}
+				if(current_individual.cur_f.at(0) < best_fitness) {
+					best_fitness = current_individual.cur_f.at(0);
+				}
+			}
+		}
+
+		// computes the average fitness for the full population
+		for(population::size_type j=0; j<sub_pop_2_size; j++) {
+			population &current_population = sub_pop_1_instances[j];
+			std::vector< population::size_type> &current_feasible_idx = sub_pop_1_feasibles_idx[j];
+
+			int current_feasible_size = current_feasible_idx.size();
 
 			double average_fitness = 0.;
-
-			if(feasible_size != 0) {
-				for(population::size_type i=0; i<feasible_size;i++) {
-					const population::individual_type &current_individual = pop_1_instance.get_individual(feasible_idx.at(i));
+			if(current_feasible_size != 0) {
+				// computes average fitness
+				for(population::size_type i=0; i<current_feasible_size;i++) {
+					const population::individual_type &current_individual = current_population.get_individual(current_feasible_idx.at(i));
 					average_fitness += current_individual.cur_f.at(0);
 				}
-				average_fitness /= feasible_size;
-
-				// average scaling (NOT DETAILED IN COELLO PAPER)
-				double best_fitness = pop_1_instance.get_individual(feasible_idx.at(0)).cur_f.at(0);
-				double worst_fitness = best_fitness;
-				for(population::size_type i=0; i<feasible_size;i++) {
-					const population::individual_type &current_individual = pop_1_instance.get_individual(feasible_idx.at(i));
-
-					if(worst_fitness < current_individual.cur_f.at(0)) {
-						worst_fitness = current_individual.cur_f.at(0);
-					}
-					if(current_individual.cur_f.at(0) < best_fitness) {
-						best_fitness = current_individual.cur_f.at(0);
-					}
-				}
+				average_fitness /= current_feasible_size;
 
 				// - feasible_size as we assume minimization (convert to objective function)
 				if(best_fitness != worst_fitness) {
-					average_fitness = (average_fitness - worst_fitness) / (best_fitness - worst_fitness) - feasible_size;
+					average_fitness = (average_fitness - worst_fitness) / (best_fitness - worst_fitness) - current_feasible_size;
 				} else {
-					average_fitness = average_fitness - feasible_size;
+					average_fitness = average_fitness - current_feasible_size;
 				}
 			} else {
-				average_fitness = - feasible_size;
+				// what do we do if there is no feasible solution in the population?
+				// should we run again the algorithm to evolve pop1?
+				// should we compute the fitness and add the worst fitness found in the population?
+				// computes average fitness over the entire population
+
+				int current_feasible_size = current_feasible_idx.size();
+
+				if(current_feasible_size == 0) {
+					for(population::size_type i=0; i<pop_size;i++) {
+						const population::individual_type &current_individual = current_population.get_individual(i);
+						average_fitness += current_individual.cur_f.at(0);
+					}
+					average_fitness /= pop_size;
+				} else {
+					average_fitness = boost::numeric::bounds<double>::highest(); // the population is doomed
+				}
 			}
 
-			// store the average fitness to the individual j
+			// store the average fitness in the individual j
 			sub_pop_2_f[j][0] = average_fitness;
-
-			//			// how do we select the population pop ?
-			//			// find the population with the best average fitness:
-			//			int best_pop_1_idx = 0;
-			//			int best_average_fitness = sub_pop_2_f[0][0];
-			//			for(int j =0; j < sub_pop_2_size; j++) {
-			//				if(sub_pop_2_f[j][0] < best_average_fitness) {
-			//					best_pop_1_idx = j;
-			//					best_average_fitness = sub_pop_2_f[j][0];
-			//				}
-			//			}
-
-
-
-			std::cout << pop_1_instance.champion() << std::endl;
 		}
+
+		// how do we select the population pop ?
+		// store in preference a feasible population
+		// then find the population with the best average fitness:
+
+		population::size_type best_pop_1_idx = -1;
+		double best_average_fitness = 0.;
+
+		// we store in preference a feasible population
+		for(population::size_type j=0; j<sub_pop_2_size; j++) {
+			std::vector< population::size_type> &current_feasible_idx = sub_pop_1_feasibles_idx[j];
+
+			// initialize
+			if((current_feasible_idx.size() != 0) && (best_pop_1_idx == -1)) {
+				best_pop_1_idx = j;
+				best_average_fitness = sub_pop_2_f[j][0];
+			} else if( (current_feasible_idx.size() != 0) && (best_pop_1_idx != -1) ){
+				// keep the best population
+				if(sub_pop_2_f[j][0] < best_average_fitness) {
+					best_pop_1_idx = j;
+					best_average_fitness = sub_pop_2_f[j][0];
+				}
+			}
+		}
+
+		// if there are no feasible ones
+		if(best_pop_1_idx == -1) {
+			best_pop_1_idx = 0;
+			best_average_fitness = sub_pop_2_f[0][0];
+
+			for(population::size_type j=1; j<sub_pop_2_size; j++) {
+				if(sub_pop_2_f[j][0] < best_average_fitness) {
+					best_pop_1_idx = j;
+					best_average_fitness = sub_pop_2_f[j][0];
+				}
+			}
+		}
+
+		// store the best population in the main population
+		population &best_pop = sub_pop_1_instances[best_pop_1_idx];
+
+		sub_pop_1.clear();
+		for(population::size_type j=0; j<sub_pop_1_size; j++) {
+			sub_pop_1.push_back(best_pop.get_individual(j).cur_x);
+		}
+
+		//std::cout << sub_pop_1.champion() << std::endl;
 
 		// need to evolve the population 2 now
 		// selection process, returns a vector
@@ -235,7 +310,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 		std::vector<int> sub_pop_2_s_idx = selection(sub_pop_2_x, sub_pop_2_f, prob);
 
 		// sub_pop_2_x_new stores the new selected generation of chromosomes
-		for (pagmo::population::size_type i = 0; i < sub_pop_2_size; i++) {
+		for(pagmo::population::size_type i = 0; i < sub_pop_2_size; i++) {
 			sub_pop_2_x_new[i] = sub_pop_2_x[sub_pop_2_s_idx[i]];
 		}
 
@@ -250,16 +325,28 @@ void cstrs_co_evolution::evolve(population &pop) const
 		// we don't need to reevaluate the population 2 as only the decision vector is used
 		sub_pop_2_x = sub_pop_2_x_new;
 
-		for(population::size_type i=0; i < sub_pop_2_size; i++)
-			std::cout << "sub_pop_2_x"<< i << " " << sub_pop_2_x[i];
+		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
+		//			std::cout << "sub_pop_2_x_" << i << " " << sub_pop_2_x[i] << std::endl;
+		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
+		//			std::cout << "sub_pop_2_f" << i << " " << sub_pop_2_f[i] << std::endl;
 
-		//		// updates the population 1
-		//		for(int j=0; j<sub_pop_1_size; j++) {
-		//			sub_pop_1[]
-		//		}
+		// std::cout << "sub_pop_2_s_idx" << sub_pop_2_s_idx;
+
+		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
+		//			std::cout << "sub_pop_2_x_new" << i << " " << sub_pop_2_x_new[i] << std::endl;
+
+		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
+		//			std::cout << "sub_pop_2_x_new" << i << " " << sub_pop_2_x_new[i] << std::endl;
+
 	}
 
 	// we evaluate the population pop
+
+	// store the final population in the main population
+	pop.clear();
+	for(population::size_type j=0; j<pop_size; j++) {
+		pop.push_back(sub_pop_1.get_individual(j).cur_x);
+	}
 
 	std::cout << pop.champion() << std::endl;
 }
@@ -308,7 +395,6 @@ std::vector<int> cstrs_co_evolution::selection(const std::vector<decision_vector
 	int method = 1;
 
 	population::size_type NP = pop_x.size();
-
 	std::vector<int> selection(NP);
 
 	switch (method) {
@@ -385,7 +471,7 @@ std::vector<int> cstrs_co_evolution::selection(const std::vector<decision_vector
 
 void cstrs_co_evolution::crossover(std::vector<decision_vector> &pop_x) const
 {
-	int cross_method=0;
+	int cross_method=1;
 
 	// crossover probability
 	const double crossover_rate = 0.8;
@@ -445,8 +531,8 @@ void cstrs_co_evolution::mutate(std::vector<decision_vector> &pop_x, const probl
 	const problem::base::size_type D = pop_x.at(0).size();
 
 	const problem::base::size_type Di = 0.;
-	const double lb[] = {1.,1000};
-	const double ub[] = {1.,1000};
+	const double lb[] = {1.,1000.};
+	const double ub[] = {1.,1000.};
 
 	const problem::base::size_type Dc = D - Di;
 
@@ -500,36 +586,6 @@ void cstrs_co_evolution::mutate(std::vector<decision_vector> &pop_x, const probl
 	}
 	}
 }
-
-// Coello is calling fixed point representation what others
-// call
-
-
-//// --------------------------------------------
-//function y = cma_genophenotransform(gp, x)
-//// input argument: tlist (an object), x vector to be transformed
-//// elements in gp :
-////         typical_x = Nx1 vector of middle of domains, default == 0
-////         scaling = Nx1 vector, default == 1
-//  if gp.skip
-//    y = x;
-//  else
-//    y = zeros(gp.typical_x); // only to set the size
-//    y(gp.scaling > 0) = x;
-//    y = gp.typical_x + y .* gp.scaling;
-//  end
-//endfunction
-
-//// --------------------------------------------
-//function x = cma_phenogenotransform(gp, x)
-//// input argument: tlist (or mlist) according to Gilles Pujol
-//  if ~gp.skip
-//    idx = gp.scaling > 0;
-//    x = (x(idx) - gp.typical_x(idx)) ./ gp.scaling(idx);
-//  end
-//endfunction
-
-
 }} //namespaces
 
 BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::algorithm::cstrs_co_evolution);
