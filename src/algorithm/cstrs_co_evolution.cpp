@@ -52,7 +52,7 @@ cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, int gen, int p
 	if(gen < 0) {
 		pagmo_throw(value_error,"number of generations must be nonnegative");
 	}
-	if( pop_2_size <= 0 ) {
+	if(pop_2_size <= 0) {
 		pagmo_throw(value_error,"the population of the population 2 be greater than 0");
 	}
 }
@@ -109,7 +109,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 
 	// initialize the population 1
 	population sub_pop_1(prob_1,0);
-//	population sub_pop_1(sub_pop_1_size);
+	//	population sub_pop_1(sub_pop_1_size);
 	sub_pop_1.clear();
 	for(population::size_type i=0; i<sub_pop_1_size; i++) {
 		sub_pop_1.push_back(pop.get_individual(i).cur_x);
@@ -128,7 +128,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 		sub_pop_2_x[i] = decision_vector(pop_2_x_size,0.);
 
 		// choose random coefficients between 1 and 1000
-		for(int j = 0; j<pop_2_x_size;j++)
+		for(population::size_type j=0; j<pop_2_x_size;j++)
 		{
 			sub_pop_2_x[i][j] = boost::uniform_real<double>(1.,1000.)(m_drng);
 		}
@@ -176,33 +176,56 @@ void cstrs_co_evolution::evolve(population &pop) const
 
 			// computes the average fitness
 			int feasible_size = feasible_idx.size();
-			double average_fitness=0.;
-			for(int i=0; i<feasible_size;i++) {
-				const population::individual_type &current_individual = pop_1_instance.get_individual(feasible_idx.at(i));
 
-				average_fitness += current_individual.cur_f.at(0);
+			double average_fitness = 0.;
+
+			if(feasible_size != 0) {
+				for(population::size_type i=0; i<feasible_size;i++) {
+					const population::individual_type &current_individual = pop_1_instance.get_individual(feasible_idx.at(i));
+					average_fitness += current_individual.cur_f.at(0);
+				}
+				average_fitness /= feasible_size;
+
+				// average scaling (NOT DETAILED IN COELLO PAPER)
+				double best_fitness = pop_1_instance.get_individual(feasible_idx.at(0)).cur_f.at(0);
+				double worst_fitness = best_fitness;
+				for(population::size_type i=0; i<feasible_size;i++) {
+					const population::individual_type &current_individual = pop_1_instance.get_individual(feasible_idx.at(i));
+
+					if(worst_fitness < current_individual.cur_f.at(0)) {
+						worst_fitness = current_individual.cur_f.at(0);
+					}
+					if(current_individual.cur_f.at(0) < best_fitness) {
+						best_fitness = current_individual.cur_f.at(0);
+					}
+				}
+
+				// - feasible_size as we assume minimization (convert to objective function)
+				if(best_fitness != worst_fitness) {
+					average_fitness = (average_fitness - worst_fitness) / (best_fitness - worst_fitness) - feasible_size;
+				} else {
+					average_fitness = average_fitness - feasible_size;
+				}
+			} else {
+				average_fitness = - feasible_size;
 			}
-			average_fitness /= feasible_size;
-
-			// average scaling (NOT DETAILED IN COELLO PAPER)
-//			for(population::size_type i=1; i<sub_pop_1_size; i++) {
-//				const population::individual_type &current_individual = pop_1_instance.get_individual(i);
-
-//				if(prob.compare_fitness(worst_fitness , current_individual.cur_f)) {
-//					feasible_idx.push_back(i);
-//				}
-//			}
-
-			double average_scaling = 1.;
-			average_fitness = average_fitness * average_scaling + feasible_size;
-
-			// assuming minimization (convert to objective function)
-			average_fitness = - average_fitness;
 
 			// store the average fitness to the individual j
 			sub_pop_2_f[j][0] = average_fitness;
 
-			// how do we select the population pop ?
+			//			// how do we select the population pop ?
+			//			// find the population with the best average fitness:
+			//			int best_pop_1_idx = 0;
+			//			int best_average_fitness = sub_pop_2_f[0][0];
+			//			for(int j =0; j < sub_pop_2_size; j++) {
+			//				if(sub_pop_2_f[j][0] < best_average_fitness) {
+			//					best_pop_1_idx = j;
+			//					best_average_fitness = sub_pop_2_f[j][0];
+			//				}
+			//			}
+
+
+
 			std::cout << pop_1_instance.champion() << std::endl;
 		}
 
@@ -230,10 +253,10 @@ void cstrs_co_evolution::evolve(population &pop) const
 		for(population::size_type i=0; i < sub_pop_2_size; i++)
 			std::cout << "sub_pop_2_x"<< i << " " << sub_pop_2_x[i];
 
-//		// updates the population 1
-//		for(int j=0; j<sub_pop_1_size; j++) {
-//			sub_pop_1[]
-//		}
+		//		// updates the population 1
+		//		for(int j=0; j<sub_pop_1_size; j++) {
+		//			sub_pop_1[]
+		//		}
 	}
 
 	// we evaluate the population pop
@@ -355,7 +378,7 @@ std::vector<int> cstrs_co_evolution::selection(const std::vector<decision_vector
 			}
 		}
 		break;
-		}
+	}
 	}
 	return selection;
 }
@@ -396,7 +419,7 @@ void cstrs_co_evolution::crossover(std::vector<decision_vector> &pop_x) const
 			}
 			break;
 		}
-		// 1 - exponential crossover
+			// 1 - exponential crossover
 		case 1: {
 			size_t n = boost::uniform_int<int>(0,D-1)(m_urng);
 			L = 0;
@@ -429,10 +452,10 @@ void cstrs_co_evolution::mutate(std::vector<decision_vector> &pop_x, const probl
 
 	const population::size_type NP = pop_x.size();
 
-//	const problem::base::size_type Di = prob.get_i_dimension();
-//	const decision_vector &lb = prob.get_lb(), &ub = prob.get_ub();
-//	const population::size_type NP = pop_x.size();
-//	const problem::base::size_type Dc = D - Di;
+	//	const problem::base::size_type Di = prob.get_i_dimension();
+	//	const decision_vector &lb = prob.get_lb(), &ub = prob.get_ub();
+	//	const population::size_type NP = pop_x.size();
+	//	const problem::base::size_type Dc = D - Di;
 
 	switch (method) {
 	case 0: { // GAUSSIAN
@@ -459,7 +482,7 @@ void cstrs_co_evolution::mutate(std::vector<decision_vector> &pop_x, const probl
 			}
 		}
 		break;
-		}
+	}
 	case 1: { // RANDOM
 		for (population::size_type i = 0; i < NP;i++) {
 			for (pagmo::problem::base::size_type j = 0; j < Dc;j++) { //for each continuous variable
@@ -474,7 +497,7 @@ void cstrs_co_evolution::mutate(std::vector<decision_vector> &pop_x, const probl
 			}
 		}
 		break;
-		}
+	}
 	}
 }
 
