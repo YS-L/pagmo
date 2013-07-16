@@ -104,210 +104,153 @@ void cstrs_co_evolution::evolve(population &pop) const
 	population::size_type sub_pop_1_size = pop_size;
 	population::size_type sub_pop_2_size = m_pop_2_size;
 
-	// initialize the population 1
-	population sub_pop_1(prob_1,0);
-	//	population sub_pop_1(sub_pop_1_size);
-	sub_pop_1.clear();
-	for(population::size_type i=0; i<sub_pop_1_size; i++) {
-		sub_pop_1.push_back(pop.get_individual(i).cur_x);
+	//	// initialize the sub population 1 with information from pop 1
+	//	population sub_pop_1(prob_1,0);
+
+	//	// evaluates the sub population 1
+	//	sub_pop_1.clear();
+	//	for(population::size_type i=0; i<sub_pop_1_size; i++) {
+	//		sub_pop_1.push_back(pop.get_individual(i).cur_x);
+	//	}
+
+	// set up the structure for the population 1 and 2
+	std::vector< std::vector<decision_vector> > sub_pop_1_x_vector(sub_pop_2_size);
+	std::vector< std::vector<fitness_vector> > sub_pop_1_f_vector(sub_pop_2_size);
+	std::vector<int> sub_pop_1_feasible_count(sub_pop_2_size, 0);
+
+	for(population::size_type i=0; i<sub_pop_2_size; i++) {
+		sub_pop_1_x_vector[i] = std::vector<decision_vector>(sub_pop_1_size);
+		sub_pop_1_f_vector[i] = std::vector<decision_vector>(sub_pop_1_size);
 	}
 
-	// initialize the population 2, composed of individuals only
+	// initialize sub_pop_1 vectors
+	for(population::size_type j=0; j<sub_pop_2_size; j++) {
+		std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
+		std::vector<decision_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
+
+		for(population::size_type i=0; i<sub_pop_1_size; i++) {
+			sub_pop_1_x[i] = pop.get_individual(i).cur_x;
+			sub_pop_1_f[i] = pop.get_individual(i).cur_f;
+		}
+	}
+
 	std::vector<decision_vector> sub_pop_2_x(sub_pop_2_size);
 	std::vector<fitness_vector> sub_pop_2_f(sub_pop_2_size);
 
-	// population 2 decision vector is 2*number of constraints
-	int pop_2_x_size = 2;
+	// population 2 problem related variables
+	// decision vector is 2*number of constraints
+	int pop_2_x_dimension = 2;
+	const double lb[] = {1.,1.};
+	const double ub[] = {1000.,1000.};
+	// const double crossover_rate = 0.8;
+	// ...
+
 	// int pop_2_x_size = 2 * prob_c_dimension;
 
-	decision_vector dummy(pop_2_x_size,10.); //used for initialisation purposes
-	for(population::size_type i=0; i<sub_pop_2_size; i++) {
-		sub_pop_2_x[i] = decision_vector(pop_2_x_size,0.);
+	// population 2 initialization
+	decision_vector dummy(pop_2_x_dimension,0.); //  used for initialisation purposes
+	for(population::size_type j=0; j<sub_pop_2_size; j++) {
+		sub_pop_2_x[j] = decision_vector(pop_2_x_dimension,0.);
 
-		// choose random coefficients between 1 and 1000
-		for(population::size_type j=0; j<pop_2_x_size;j++)
+		// choose random coefficients between lower bound and upper bound
+		for(population::size_type i=0; i<pop_2_x_dimension;i++)
 		{
-			sub_pop_2_x[i][j] = boost::uniform_real<double>(1.,1000.)(m_drng);
+			sub_pop_2_x[j][i] = boost::uniform_real<double>(lb[i],ub[i])(m_drng);
 		}
-		sub_pop_2_f[i] = fitness_vector(1);
+		sub_pop_2_f[j] = fitness_vector(1);
 	}
-
-	std::vector<decision_vector> sub_pop_2_x_new(sub_pop_2_size,dummy);
-
-	std::vector<population> sub_pop_1_instances;
-	sub_pop_1_instances.reserve(sub_pop_2_size);
-	std::vector< std::vector<population::size_type> > sub_pop_1_feasibles_idx;
 
 	// Main Co-Evolution loop
 	for(int k=0; k<m_gen; k++) {
 		std::cout << "current generation: " << k << std::endl;
 
-		for(population::size_type i=0; i < sub_pop_2_size; i++)
-			std::cout << "sub_pop_2_x" << i << " " << sub_pop_2_x[i] << std::endl;
-
-		// we initialize the vector of population and feasible indexes
-		sub_pop_1_instances.clear();
-		sub_pop_1_feasibles_idx.clear();
-		for(population::size_type j=0; j<sub_pop_2_size; j++) {
-			prob_1.set_penalty_coeff(sub_pop_2_x.at(j));
-			// use an instance of the population
-			sub_pop_1_instances.push_back(population(sub_pop_1));
-			sub_pop_1_feasibles_idx.push_back(std::vector<population::size_type>(0));
-		}
-
 		// for each individuals of pop 2, evolve the current population,
 		// and store the position of the feasible idx
 		for(population::size_type j=0; j<sub_pop_2_size; j++) {
-			// use an instance of the population
-			population &current_population = sub_pop_1_instances[j];
 
-			// set decision vector encoding penalty coefficients
-			// w1 and w2 in prob 1
+			std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
+			std::vector<decision_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
+
+			// modify the problem by settin decision vector encoding penalty
+			// coefficients w1 and w2 in prob 1
 			prob_1.set_penalty_coeff(sub_pop_2_x.at(j));
 
-			// reevaluates the population 1 with these new coefficients
+			// creating the subpopulation pop 1 instance based on the
+			// updated prob 1
+			population sub_pop_1_instance(prob_1,0);
 
-			std::cout << "-------------------------------------------------" << std::endl;
-			std::cout << "----------------new pop EVALUATION --------------" << std::endl;
-			std::cout << "-------------------------------------------------" << std::endl;
-			prob_1.reset_caches();
+			// initialize the instance with pop_1 chromosomes
 			for(population::size_type i=0; i<sub_pop_1_size; i++) {
-				current_population.set_x(i,sub_pop_1.get_individual(i).cur_x);
+				sub_pop_1_instance.push_back(sub_pop_1_x[i]);
 			}
 
 			// evolve the population 1 instance
-			// DO WE NEED TO CLONE THE ORIGINAL
-			// ALGO TO AVOID KEEPING THE ALGO HISTORY AS WELL?
-			m_original_algo->evolve(current_population);
+			m_original_algo->evolve(sub_pop_1_instance);
 
-			// store the feasible idx
-			std::vector<population::size_type> &current_sub_pop_1_feasibles_idx = sub_pop_1_feasibles_idx[j];
-
-			current_sub_pop_1_feasibles_idx.clear();
+			// store the new chromosomes
 			for(population::size_type i=0; i<sub_pop_1_size; i++) {
-				const population::individual_type &current_individual = current_population.get_individual(i);
-
-				if(prob.feasibility_x(current_individual.cur_x)) {
-					current_sub_pop_1_feasibles_idx.push_back(i);
-				}
+				sub_pop_1_x[i] = sub_pop_1_instance.get_individual(i).cur_x;
+				sub_pop_1_f[i] = sub_pop_1_instance.get_individual(i).cur_f;
 			}
 		}
 
-		// gets the feasible worst fitness and best fitness for the full population
-		// average scaling defined from all the populations (NOT DETAILED IN COELLO PAPER)
-		double best_fitness = boost::numeric::bounds<double>::highest();
-		double worst_fitness = boost::numeric::bounds<double>::lowest();
+		std::vector<int> feasible_solution_number_vector(sub_pop_2_size);
+		std::vector<int> feasible_sum_vector(sub_pop_2_size);
 
-		for(population::size_type j=0; j<sub_pop_2_size; j++) {
-			population &current_population = sub_pop_1_instances[j];
-			std::vector< population::size_type> &current_feasible_idx = sub_pop_1_feasibles_idx[j];
-
-			population::size_type current_feasible_size = current_feasible_idx.size();
-
-			for(population::size_type i=0; i<current_feasible_size; i++) {
-				const population::individual_type &current_individual =
-						current_population.get_individual(current_feasible_idx.at(i));
-
-				if(worst_fitness < current_individual.cur_f.at(0)) {
-					worst_fitness = current_individual.cur_f.at(0);
-				}
-				if(current_individual.cur_f.at(0) < best_fitness) {
-					best_fitness = current_individual.cur_f.at(0);
-				}
-			}
-		}
-
+		double max_feasible_fitness = 0.;
 		// computes the average fitness for the full population
 		for(population::size_type j=0; j<sub_pop_2_size; j++) {
-			population &current_population = sub_pop_1_instances[j];
-			std::vector< population::size_type> &current_feasible_idx = sub_pop_1_feasibles_idx[j];
+			std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
+			std::vector<fitness_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
 
-			int current_feasible_size = current_feasible_idx.size();
+			// computes the number of feasible solutions and their sum for the current population
+			int feasible_solution_number = 0;
+			double feasible_sum = 0.;
+			for(population::size_type i=0; i<sub_pop_1_size; i++) {
+				decision_vector &current_x = sub_pop_1_x[i];
+				fitness_vector &current_f = sub_pop_1_f[i];
 
-			double average_fitness = 0.;
-			if(current_feasible_size != 0) {
-				// computes average fitness
-				for(population::size_type i=0; i<current_feasible_size;i++) {
-					const population::individual_type &current_individual = current_population.get_individual(current_feasible_idx.at(i));
-					average_fitness += current_individual.cur_f.at(0);
-				}
-				average_fitness /= current_feasible_size;
+				if(prob.feasibility_x(current_x)) {
+					feasible_solution_number++;
+					feasible_sum += current_f[0];
 
-				// - feasible_size as we assume minimization (convert to objective function)
-				if(best_fitness != worst_fitness) {
-					average_fitness = (average_fitness - worst_fitness) / (best_fitness - worst_fitness) - current_feasible_size;
-				} else {
-					average_fitness = average_fitness - current_feasible_size;
-				}
-			} else {
-				// what do we do if there is no feasible solution in the population?
-				// should we run again the algorithm to evolve pop1?
-				// should we compute the fitness and add the worst fitness found in the population?
-				// computes average fitness over the entire population
-
-				int current_feasible_size = current_feasible_idx.size();
-
-				if(current_feasible_size == 0) {
-					for(population::size_type i=0; i<pop_size;i++) {
-						const population::individual_type &current_individual = current_population.get_individual(i);
-						average_fitness += current_individual.cur_f.at(0);
+					// computes max feasible value
+					if(i==0) {
+						max_feasible_fitness = current_f[0];
+					} else {
+						if(max_feasible_fitness < current_f[0]) {
+							max_feasible_fitness = current_f[0];
+						}
 					}
-					average_fitness /= pop_size;
-				} else {
-					average_fitness = boost::numeric::bounds<double>::highest(); // the population is doomed
 				}
 			}
-
-			// store the average fitness in the individual j
-			sub_pop_2_f[j][0] = average_fitness;
+			feasible_solution_number_vector[j] = feasible_solution_number;
+			feasible_sum_vector[j] = feasible_sum;
 		}
 
-		// how do we select the population pop ?
-		// store in preference a feasible population
-		// then find the population with the best average fitness:
-
-		population::size_type best_pop_1_idx = -1;
-		double best_average_fitness = 0.;
-
-		// we store in preference a feasible population
+		// computes the fitness for population 2
 		for(population::size_type j=0; j<sub_pop_2_size; j++) {
-			std::vector< population::size_type> &current_feasible_idx = sub_pop_1_feasibles_idx[j];
+			// case the solution containts at least one feasible individual
+			if(feasible_solution_number_vector.at(j) > 0) {
+				sub_pop_2_f[j][0] = feasible_sum_vector[j] / feasible_solution_number_vector[j] - feasible_solution_number_vector[j];
+			}
+			else {
+				std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
 
-			// initialize
-			if((current_feasible_idx.size() != 0) && (best_pop_1_idx == -1)) {
-				best_pop_1_idx = j;
-				best_average_fitness = sub_pop_2_f[j][0];
-			} else if( (current_feasible_idx.size() != 0) && (best_pop_1_idx != -1) ){
-				// keep the best population
-				if(sub_pop_2_f[j][0] < best_average_fitness) {
-					best_pop_1_idx = j;
-					best_average_fitness = sub_pop_2_f[j][0];
+				double total_sum_viol = 0.;
+				int total_num_viol = 0;
+
+				for(population::size_type i=0; i<sub_pop_1_size; i++) {
+					double sum_viol;
+					int num_viol;
+					compute_penalty(sum_viol,num_viol,sub_pop_1_x[i],prob);
+					total_sum_viol += sum_viol;
+					total_num_viol += num_viol;
 				}
+
+				sub_pop_2_f[j][0] = max_feasible_fitness + total_sum_viol/double(total_num_viol) - double(total_num_viol);
 			}
 		}
-
-		// if there are no feasible ones
-		if(best_pop_1_idx == -1) {
-			best_pop_1_idx = 0;
-			best_average_fitness = sub_pop_2_f[0][0];
-
-			for(population::size_type j=1; j<sub_pop_2_size; j++) {
-				if(sub_pop_2_f[j][0] < best_average_fitness) {
-					best_pop_1_idx = j;
-					best_average_fitness = sub_pop_2_f[j][0];
-				}
-			}
-		}
-
-		// store the best population in the main population
-		population &best_pop = sub_pop_1_instances[best_pop_1_idx];
-
-		sub_pop_1.clear();
-		for(population::size_type j=0; j<sub_pop_1_size; j++) {
-			sub_pop_1.push_back(best_pop.get_individual(j).cur_x);
-		}
-
-		//std::cout << sub_pop_1.champion() << std::endl;
 
 		// need to evolve the population 2 now
 		// selection process, returns a vector
@@ -315,6 +258,8 @@ void cstrs_co_evolution::evolve(population &pop) const
 		std::vector<int> sub_pop_2_s_idx = selection(sub_pop_2_x, sub_pop_2_f, prob);
 
 		// sub_pop_2_x_new stores the new selected generation of chromosomes
+		std::vector<decision_vector> sub_pop_2_x_new(sub_pop_2_size,dummy);
+
 		for(pagmo::population::size_type i = 0; i < sub_pop_2_size; i++) {
 			sub_pop_2_x_new[i] = sub_pop_2_x[sub_pop_2_s_idx[i]];
 		}
@@ -329,28 +274,19 @@ void cstrs_co_evolution::evolve(population &pop) const
 
 		// we don't need to reevaluate the population 2 as only the decision vector is used
 		sub_pop_2_x = sub_pop_2_x_new;
-
-		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
-		//			std::cout << "sub_pop_2_x_" << i << " " << sub_pop_2_x[i] << std::endl;
-		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
-		//			std::cout << "sub_pop_2_f" << i << " " << sub_pop_2_f[i] << std::endl;
-
-		// std::cout << "sub_pop_2_s_idx" << sub_pop_2_s_idx;
-
-		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
-		//			std::cout << "sub_pop_2_x_new" << i << " " << sub_pop_2_x_new[i] << std::endl;
-
-		//		for(population::size_type i=0; i < sub_pop_2_size; i++)
-		//			std::cout << "sub_pop_2_x_new" << i << " " << sub_pop_2_x_new[i] << std::endl;
-
+	}
+	// store the best fitness population in the final pop
+	int best_idx = 0;
+	for(population::size_type j=1; j<sub_pop_2_size; j++) {
+		if(sub_pop_2_f[j][0] < sub_pop_2_f[best_idx][0]) {
+			best_idx = j;
+		}
 	}
 
-	// we evaluate the population pop
-
-	// store the final population in the main population
+	//	 store the final population in the main population
 	pop.clear();
-	for(population::size_type j=0; j<pop_size; j++) {
-		pop.push_back(sub_pop_1.get_individual(j).cur_x);
+	for(population::size_type i=0; i<sub_pop_1_size; i++) {
+		pop.push_back(sub_pop_1_x_vector[best_idx][i]);
 	}
 
 	std::cout << pop.champion() << std::endl;
@@ -394,6 +330,47 @@ std::string cstrs_co_evolution::human_readable_extra() const
 	return s.str();
 }
 
+/// Computes the solution infeasibility measure.
+/**
+ * Updates the solution infeasibility vector with the population given.
+ * @param[in,out] std::vector<double solution infeasibility vector to update.
+ * @param[in] population pop.
+ */
+void cstrs_co_evolution::compute_penalty(double &sum_viol, int &num_viol, const decision_vector &x, const problem::base& prob) const
+{
+	// get the constraints dimension
+	constraint_vector c(prob.get_c_dimension(), 0.);
+	problem::base::c_size_type prob_c_dimension = prob.get_c_dimension();
+	problem::base::c_size_type number_of_eq_constraints =
+			prob.get_c_dimension() -
+			prob.get_ic_dimension();
+
+	const std::vector<double> &c_tol = prob.get_c_tol();
+
+	// updates the current constraint vector
+	prob.compute_constraints(c,x);
+
+	// sets the right definition of the constraints
+	for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
+		c[j] = std::abs(c.at(j)) - c_tol.at(j);
+	}
+	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
+		c[j] = std::max(0.,c.at(j));
+	}
+
+	// update sum_num_viol
+	sum_viol = 0.;
+	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
+		sum_viol += c.at(j);
+	}
+
+	num_viol = 0;
+	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
+		if(!prob.test_constraint(c, j)) {
+			num_viol += 1;
+		}
+	}
+}
 
 std::vector<int> cstrs_co_evolution::selection(const std::vector<decision_vector> &pop_x, const std::vector<fitness_vector> &pop_f, const problem::base &prob) const
 {
@@ -536,8 +513,8 @@ void cstrs_co_evolution::mutate(std::vector<decision_vector> &pop_x, const probl
 	const problem::base::size_type D = pop_x.at(0).size();
 
 	const problem::base::size_type Di = 0.;
-	const double lb[] = {1.,1000.};
-	const double ub[] = {1.,1000.};
+	const double lb[] = {1.,1.};
+	const double ub[] = {1000.,1000.};
 
 	const problem::base::size_type Dc = D - Di;
 

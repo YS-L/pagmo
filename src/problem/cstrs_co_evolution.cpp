@@ -95,15 +95,13 @@ void cstrs_co_evolution::objfun_impl(fitness_vector &f, const decision_vector &x
 {
 	m_original_problem->objfun(f, x);
 
-	double coeff = 0.;
-	int viol = 0;
+	double sum_viol = 0.;
+	int num_viol = 0;
 
-	std::cout << "m_penalty_coeff" << m_penalty_coeff << std::endl;
-
-	compute_penalty(coeff,viol,x);
+	compute_penalty(sum_viol,num_viol,x);
 
 	// assuming minimization
-	f[0] += coeff * m_penalty_coeff.at(0) + double(viol) * m_penalty_coeff.at(1);
+	f[0] += sum_viol * m_penalty_coeff.at(0) + double(num_viol) * m_penalty_coeff.at(1);
 }
 
 /// Extra human readable info for the problem.
@@ -140,9 +138,8 @@ void cstrs_co_evolution::set_penalty_coeff(const std::vector<double> &penalty_co
  * @param[in,out] std::vector<double solution infeasibility vector to update.
  * @param[in] population pop.
  */
-void cstrs_co_evolution::compute_penalty(double &coeff, int &viol, const decision_vector &x) const
+void cstrs_co_evolution::compute_penalty(double &sum_viol, int &num_viol, const decision_vector &x) const
 {
-
 	// get the constraints dimension
 	constraint_vector c(m_original_problem->get_c_dimension(), 0.);
 	problem::base::c_size_type prob_c_dimension = m_original_problem->get_c_dimension();
@@ -163,16 +160,16 @@ void cstrs_co_evolution::compute_penalty(double &coeff, int &viol, const decisio
 		c[j] = std::max(0.,c.at(j));
 	}
 
-	// update coeff
-	coeff = 0.;
+	// update sum_num_viol
+	sum_viol = 0.;
 	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-		coeff += c.at(j);
+		sum_viol += c.at(j);
 	}
 
-	viol = 0;
+	num_viol = 0;
 	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
 		if(!m_original_problem->test_constraint(c, j)) {
-			viol += 1;
+			num_viol += 1;
 		}
 	}
 }

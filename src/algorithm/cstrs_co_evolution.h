@@ -82,6 +82,9 @@ private:
 	// population 2 size
 	int m_pop_2_size;
 
+	// violation evaluation
+	void compute_penalty(double &sum_viol, int &num_viol, const decision_vector &x, const problem::base& prob) const;
+
 	// genetic algoritms operators
 	std::vector<int> selection(const std::vector<decision_vector> &, const std::vector<fitness_vector> &, const problem::base &) const;
 	void crossover(std::vector<decision_vector> &pop_x) const;
