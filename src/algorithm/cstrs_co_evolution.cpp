@@ -149,6 +149,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 		sub_pop_1_instances.clear();
 		sub_pop_1_feasibles_idx.clear();
 		for(population::size_type j=0; j<sub_pop_2_size; j++) {
+			prob_1.set_penalty_coeff(sub_pop_2_x.at(j));
 			// use an instance of the population
 			sub_pop_1_instances.push_back(population(sub_pop_1));
 			sub_pop_1_feasibles_idx.push_back(std::vector<population::size_type>(0));
@@ -165,6 +166,10 @@ void cstrs_co_evolution::evolve(population &pop) const
 			prob_1.set_penalty_coeff(sub_pop_2_x.at(j));
 
 			// reevaluates the population 1 with these new coefficients
+
+			std::cout << "-------------------------------------------------" << std::endl;
+			std::cout << "----------------new pop EVALUATION --------------" << std::endl;
+			std::cout << "-------------------------------------------------" << std::endl;
 			prob_1.reset_caches();
 			for(population::size_type i=0; i<sub_pop_1_size; i++) {
 				current_population.set_x(i,sub_pop_1.get_individual(i).cur_x);

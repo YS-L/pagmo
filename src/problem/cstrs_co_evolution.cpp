@@ -98,6 +98,8 @@ void cstrs_co_evolution::objfun_impl(fitness_vector &f, const decision_vector &x
 	double coeff = 0.;
 	int viol = 0;
 
+	std::cout << "m_penalty_coeff" << m_penalty_coeff << std::endl;
+
 	compute_penalty(coeff,viol,x);
 
 	// assuming minimization
