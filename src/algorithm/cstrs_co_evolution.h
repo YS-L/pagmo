@@ -88,7 +88,7 @@ private:
 	// genetic algoritms operators
 	std::vector<int> selection(const std::vector<decision_vector> &, const std::vector<fitness_vector> &, const problem::base &) const;
 	void crossover(std::vector<decision_vector> &pop_x) const;
-	void mutate(std::vector<decision_vector> &pop_x, const problem::base &prob) const;
+	void mutate(std::vector<decision_vector> &pop_x, const decision_vector &lb, const decision_vector &ub) const;
 };
 
 }} //namespaces

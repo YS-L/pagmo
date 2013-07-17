@@ -50,8 +50,18 @@ namespace pagmo{ namespace problem {
 class __PAGMO_VISIBLE cstrs_co_evolution : public base
 {
 public:
+	/// Type of co-evolution.
+	/**
+	* Definition of three types of co-evolution: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
+	* The SIMPLE, is co-evolution defined by COELLO. The SPLIT_NEQ_EQ, splits equalities and
+	* inequalities constraints (4 penalty coefficients). The SPLIT_CONSTRAINTS split the
+	* number of coefficients upon the number of penlaty coefficients (2 * c_dimension).
+	*/
+	// co-evolution simple, split_neq_eq, split_constraints
+	enum method_type {SIMPLE = 0, SPLIT_NEQ_EQ = 1, SPLIT_CONSTRAINTS = 2};
+
 	//constructors
-	cstrs_co_evolution(const base & = cec2006(4));
+	cstrs_co_evolution(const base & = cec2006(4), const method_type = SIMPLE);
 
 	//copy constructor
 	cstrs_co_evolution(const cstrs_co_evolution &);
@@ -59,15 +69,14 @@ public:
 	std::string get_name() const;
 
 	void set_penalty_coeff(const std::vector<double> &);
+	int get_expected_penalty_coeff_size();
 
 protected:
 	std::string human_readable_extra() const;
 	void objfun_impl(fitness_vector &, const decision_vector &) const;
 
 private:
-	//void compute_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop);
-
-	void compute_penalty(double &, int &, const std::vector<double> &) const;
+	void compute_penalty(std::vector<double> &, std::vector<int> &, const decision_vector &) const;
 
 private:
 	friend class boost::serialization::access;
@@ -77,9 +86,12 @@ private:
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_problem;
 		ar & m_penalty_coeff;
+		ar & const_cast<method_type &>(m_method);
 	}
 	base_ptr m_original_problem;
 	std::vector<double> m_penalty_coeff;
+
+	const method_type m_method;
 };
 
 }} //namespaces

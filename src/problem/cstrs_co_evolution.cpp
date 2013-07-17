@@ -32,22 +32,25 @@
 #include "cstrs_co_evolution.h"
 
 namespace pagmo { namespace problem {
-
 /**
- * Constructor using initial constrained problem
+ * Constructor of co-evolution problem using initial constrained problem
+ *
+ * Note: This problem is not inteded to be used by itself. Instead use the
+ * co-evolution algorithm if you want to solve constrained problems.
  *
  * @param[in] problem base::problem to be modified to use a self-adaptive
  * as constraints handling technique.
  *
  */
-cstrs_co_evolution::cstrs_co_evolution(const base &problem):
+cstrs_co_evolution::cstrs_co_evolution(const base &problem, const method_type method):
 	base((int)problem.get_dimension(),
 		 problem.get_i_dimension(),
 		 problem.get_f_dimension(),
 		 0,
 		 0,
 		 0.),
-	m_original_problem(problem.clone())
+	m_original_problem(problem.clone()),
+	m_method(method)
 {
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
@@ -73,7 +76,8 @@ cstrs_co_evolution::cstrs_co_evolution(const cstrs_co_evolution &prob):
 		 prob.get_ic_dimension(),
 		 prob.get_c_tol()),
 	m_original_problem(prob.m_original_problem->clone()),
-	m_penalty_coeff(prob.m_penalty_coeff)
+	m_penalty_coeff(prob.m_penalty_coeff),
+	m_method(prob.m_method)
 {
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
 }
@@ -87,21 +91,41 @@ base_ptr cstrs_co_evolution::clone() const
 /// Implementation of the objective function.
 /// (Wraps over the original implementation)
 /**
- *  Returns the penalized fitness if the decision vector is found in the
- *  given population or the non penalized objective function of the underlying
- *  problem otherwise.
+ *  Returns the penalized fitness if the decision vector penalize with the penalty
+ *  coefficient given.
  */
 void cstrs_co_evolution::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
 	m_original_problem->objfun(f, x);
 
-	double sum_viol = 0.;
-	int num_viol = 0;
+	std::vector<double> sum_viol;
+	std::vector<int> num_viol;
 
 	compute_penalty(sum_viol,num_viol,x);
 
 	// assuming minimization
-	f[0] += sum_viol * m_penalty_coeff.at(0) + double(num_viol) * m_penalty_coeff.at(1);
+	switch(m_method)
+	{
+	case SIMPLE:
+	{
+		f[0] += sum_viol.at(0) * m_penalty_coeff.at(0) + double(num_viol.at(0)) * m_penalty_coeff.at(1);
+		break;
+	}
+	case SPLIT_NEQ_EQ:
+	{
+		f[0] += sum_viol.at(0) * m_penalty_coeff.at(0) + double(num_viol.at(0)) * m_penalty_coeff.at(1);
+		f[0] += sum_viol.at(1) * m_penalty_coeff.at(2) + double(num_viol.at(1)) * m_penalty_coeff.at(3);
+		break;
+	}
+	case SPLIT_CONSTRAINTS:
+	{
+		int c_dimension = m_original_problem->get_c_dimension();
+		for(int i=0; i<c_dimension; i++) {
+			f[0] += sum_viol.at(0+i) * m_penalty_coeff.at(0+i*2) + double(num_viol.at(0+i)) * m_penalty_coeff.at(1+i*2);
+		}
+		break;
+	}
+	}
 }
 
 /// Extra human readable info for the problem.
@@ -129,16 +153,57 @@ std::string cstrs_co_evolution::get_name() const
  */
 void cstrs_co_evolution::set_penalty_coeff(const std::vector<double> &penalty_coeff)
 {
+	switch(m_method)
+	{
+	case SIMPLE:
+	{
+		if(penalty_coeff.size() != 2) {
+			pagmo_throw(value_error,"The size of the penalty coefficient vector is not 2.");
+		}
+		break;
+	}
+	case SPLIT_NEQ_EQ:
+	{
+		if(penalty_coeff.size() != 4) {
+			pagmo_throw(value_error,"The size of the penalty coefficient vector is not 4.");
+		}
+		break;
+	}
+	case SPLIT_CONSTRAINTS:
+		if(penalty_coeff.size() != 2 * m_original_problem->get_c_dimension()) {
+			pagmo_throw(value_error,"The size of the penalty coefficient vector is not 2*number of constraints");
+		}
+		break;
+	}
 	m_penalty_coeff = penalty_coeff;
 }
 
-/// Computes the solution infeasibility measure.
+/// Returns the size of the penalty coefficient the problem expects
+/// depending on the method used.
+int cstrs_co_evolution::get_expected_penalty_coeff_size() {
+	switch(m_method)
+	{
+	case SIMPLE:
+	{
+		return 2;
+	}
+	case SPLIT_NEQ_EQ:
+	{
+		return 4;
+	}
+	case SPLIT_CONSTRAINTS:
+		return 2*m_original_problem->get_c_dimension();
+	}
+}
+
+/// Computes the penalty depending on the provided penalty coefficient.
 /**
  * Updates the solution infeasibility vector with the population given.
- * @param[in,out] std::vector<double solution infeasibility vector to update.
- * @param[in] population pop.
+ * @param[in,out] std::vector<double> sum_viol sum of violation vector.
+ * @param[in,out] std::vector<double> num_viol number of violation vector.
+ * @param[in] decision_vector x.
  */
-void cstrs_co_evolution::compute_penalty(double &sum_viol, int &num_viol, const decision_vector &x) const
+void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vector<int> &num_viol, const decision_vector &x) const
 {
 	// get the constraints dimension
 	constraint_vector c(m_original_problem->get_c_dimension(), 0.);
@@ -160,17 +225,75 @@ void cstrs_co_evolution::compute_penalty(double &sum_viol, int &num_viol, const 
 		c[j] = std::max(0.,c.at(j));
 	}
 
-	// update sum_num_viol
-	sum_viol = 0.;
-	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-		sum_viol += c.at(j);
-	}
 
-	num_viol = 0;
-	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-		if(!m_original_problem->test_constraint(c, j)) {
-			num_viol += 1;
+	// updates the vectors depending on the method
+	switch(m_method)
+	{
+	case SIMPLE:
+	{
+		sum_viol.resize(1);
+		num_viol.resize(1);
+		std::fill(sum_viol.begin(),sum_viol.end(),0.);
+		std::fill(num_viol.begin(),num_viol.end(),0.);
+
+		// update sum_num_viol
+		for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
+			sum_viol[0] += c.at(j);
 		}
+
+		for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
+			if(!m_original_problem->test_constraint(c, j)) {
+				num_viol[0] += 1;
+			}
+		}
+		break;
+	}
+	case SPLIT_NEQ_EQ:
+	{
+		sum_viol.resize(2);
+		num_viol.resize(2);
+		std::fill(sum_viol.begin(),sum_viol.end(),0.);
+		std::fill(num_viol.begin(),num_viol.end(),0.);
+
+		// update sum_num_viol
+		for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
+			sum_viol[0] += c.at(j);
+		}
+		for(problem::base::c_size_type j=number_of_eq_constraints; j<prob_c_dimension; j++) {
+			sum_viol[1] += c.at(j);
+		}
+
+		for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
+			if(!m_original_problem->test_constraint(c, j)) {
+				num_viol[0] += 1;
+			}
+		}
+		for(problem::base::c_size_type j=number_of_eq_constraints; j<prob_c_dimension; j++) {
+			if(!m_original_problem->test_constraint(c, j)) {
+				num_viol[1] += 1;
+			}
+		}
+		break;
+	}
+	case SPLIT_CONSTRAINTS:
+	{
+		sum_viol.resize(prob_c_dimension);
+		num_viol.resize(prob_c_dimension);
+		std::fill(sum_viol.begin(),sum_viol.end(),0.);
+		std::fill(num_viol.begin(),num_viol.end(),0.);
+
+		// update sum_num_viol
+		for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
+			sum_viol[j] += c.at(j);
+		}
+
+		for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
+			if(!m_original_problem->test_constraint(c, j)) {
+				num_viol[j] += 1;
+			}
+		}
+		break;
+	}
 	}
 }
 
