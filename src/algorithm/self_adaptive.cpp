@@ -42,7 +42,7 @@ namespace pagmo { namespace algorithm {
  * Constructs an self adaptive algorithm
  *
  * @param[in] original_algo pagmo::algorithm to use as 'original' optimization method
- * @throws value_error if stop is negative or perturb is not in [0,1]
+ * @throws value_error if gen is negative or zero
  */
 self_adaptive::self_adaptive(const base &original_algo, int gen):base(),m_gen(gen)
 {
@@ -110,7 +110,7 @@ void self_adaptive::evolve(population &pop) const
 		// way to implement it. But for DE, PSO in example, there is no fitness evaluator?
 		m_original_algo->evolve(pop_new);
 
-		//5 - Reinsert best individual every m_elitism generations
+		// Reinsert best individual every m_elitism generations
 		// Uses the constrained problem. If we don't do that, we loose the best individual...
 		// Should we impose a certain porcentage of the best ones?
 		if (k % 1 == 0) {

@@ -47,7 +47,16 @@ self_adaptive::self_adaptive(const base &problem, const population &pop):
 		 0,
 		 0,
 		 0.),
-	m_original_problem(problem.clone())
+	m_original_problem(problem.clone()),
+	m_apply_penalty_1(false),
+	m_scaling_factor(0.0),
+	m_c_scaling(0),
+	m_f_hat_down(0),
+	m_f_hat_up(0),
+	m_f_hat_round(0),
+	m_i_hat_down(0.0),
+	m_i_hat_up(0.0),
+	m_i_hat_round(0.0)
 {
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
@@ -202,7 +211,7 @@ void self_adaptive::update_penalty_coeff(const population &pop)
 			}
 		}
 
-		// hat down is now availlable
+		// hat down is now available
 		fitness_vector f_hat_down = pop.get_individual(hat_down_idx).cur_f;
 
 		// x_hat_up value depends if the population contains infeasible individual with objective
