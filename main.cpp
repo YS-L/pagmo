@@ -41,8 +41,13 @@ int main()
 	//						   algorithm::sga::selection::ROULETTE,
 	//						   algorithm::sga::crossover::EXPONENTIAL);
 	//pagmo::algorithm::cmaes algo(25);
-	pagmo::algorithm::de algo(25);
-	pagmo::algorithm::cstrs_co_evolution algo_constrained(algo, 20, 30);
+//	pagmo::algorithm::de algo(25);
+//	pagmo::algorithm::sga algo_2(1);
+
+	pagmo::algorithm::jde algo(25);
+	pagmo::algorithm::jde algo_2(1);
+
+	pagmo::algorithm::cstrs_co_evolution algo_constrained(algo, algo_2, 30, 20);
 
 	std::cout << algo_constrained;
 

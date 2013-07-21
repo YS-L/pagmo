@@ -94,8 +94,69 @@ private:
 	const method_type m_method;
 };
 
+class __PAGMO_VISIBLE cstrs_co_evolution_2 : public base
+{
+public:
+	/// Type of co-evolution.
+	/**
+	* Definition of three types of co-evolution: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
+	* The SIMPLE, is co-evolution defined by COELLO. The SPLIT_NEQ_EQ, splits equalities and
+	* inequalities constraints (4 penalty coefficients). The SPLIT_CONSTRAINTS split the
+	* number of coefficients upon the number of penlaty coefficients (2 * c_dimension).
+	*/
+
+	//constructors
+	cstrs_co_evolution_2(const base & = cec2006(4), int dimension = 2);
+
+	//copy constructor
+	cstrs_co_evolution_2(const cstrs_co_evolution_2 &);
+	base_ptr clone() const;
+	std::string get_name() const;
+
+	void update_penalty_coeff(const std::vector<decision_vector> &,
+							  const std::vector< std::vector<decision_vector> > &,
+							  const std::vector< std::vector<fitness_vector> > &);
+
+protected:
+	std::string human_readable_extra() const;
+	void objfun_impl(fitness_vector &, const decision_vector &) const;
+
+private:
+	void compute_penalty(double &, int &, const decision_vector &) const;
+
+private:
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int)
+	{
+		ar & boost::serialization::base_object<base>(*this);
+		ar & m_original_problem;
+		ar & m_sub_pop_2_x_vector;
+		ar & m_sub_pop_1_f_vector;
+		ar & m_feasible_count_vector;
+		ar & m_feasible_fitness_sum_vector;
+		ar & m_max_feasible_fitness;
+		ar & m_total_sum_viol;
+		ar & m_total_num_viol;
+	}
+	base_ptr m_original_problem;
+
+	std::vector<decision_vector> m_sub_pop_2_x_vector;
+	std::vector< std::vector<double> > m_sub_pop_1_f_vector;
+
+	// penalty coefficients
+	std::vector<int> m_feasible_count_vector;
+	std::vector<double> m_feasible_fitness_sum_vector;
+	double m_max_feasible_fitness;
+
+	// penalty for infeasible
+	std::vector<double> m_total_sum_viol;
+	std::vector<int> m_total_num_viol;
+};
+
 }} //namespaces
 
 BOOST_CLASS_EXPORT_KEY(pagmo::problem::cstrs_co_evolution);
+BOOST_CLASS_EXPORT_KEY(pagmo::problem::cstrs_co_evolution_2);
 
 #endif // PAGMO_PROBLEM_cstrs_co_evolution_H

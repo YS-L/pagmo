@@ -31,7 +31,9 @@
 #include "../population.h"
 #include "../serialization.h"
 #include "base.h"
-#include "cs.h"
+#include "jde.h"
+#include "sga.h"
+#include "../problem/cstrs_co_evolution.h"
 
 namespace pagmo { namespace algorithm {
 
@@ -54,7 +56,9 @@ namespace pagmo { namespace algorithm {
 class __PAGMO_VISIBLE cstrs_co_evolution: public base
 {
 public:
-	cstrs_co_evolution(const base & = cs(), int gen = 1, int = 30);
+	cstrs_co_evolution(const base & = jde(), const base & = sga(1), int pop_2_size = 30, int gen = 1,
+					   problem::cstrs_co_evolution::method_type method = problem::cstrs_co_evolution::SIMPLE,
+					   double pen_lower_bound = 0., double pen_upper_bound = 100000.);
 	cstrs_co_evolution(const cstrs_co_evolution &);
 	base_ptr clone() const;
 
@@ -74,21 +78,22 @@ private:
 	{
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_algo;
+		ar & m_original_algo_2;
 		ar & const_cast<int &>(m_gen);
+		ar & m_method;
+		ar & m_pen_lower_bound;
+		ar & m_pen_upper_bound;
 	}
 	base_ptr m_original_algo;
+	base_ptr m_original_algo_2;
 	//Number of generations
 	const int m_gen;
 	// population 2 size
 	int m_pop_2_size;
-
-	// violation evaluation
-	void compute_penalty(double &sum_viol, int &num_viol, const decision_vector &x, const problem::base& prob) const;
-
-	// genetic algoritms operators
-	std::vector<int> selection(const std::vector<decision_vector> &, const std::vector<fitness_vector> &, const problem::base &) const;
-	void crossover(std::vector<decision_vector> &pop_x) const;
-	void mutate(std::vector<decision_vector> &pop_x, const decision_vector &lb, const decision_vector &ub) const;
+	// problem 2 variables
+	problem::cstrs_co_evolution::method_type m_method;
+	double m_pen_lower_bound;
+	double m_pen_upper_bound;
 };
 
 }} //namespaces
