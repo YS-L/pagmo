@@ -44,8 +44,8 @@ int main()
 //	pagmo::algorithm::de algo(25);
 //	pagmo::algorithm::sga algo_2(1);
 
-	pagmo::algorithm::jde algo(25);
-	pagmo::algorithm::jde algo_2(1);
+	pagmo::algorithm::de algo(25, 0.8, 0.9, 2, 1e-15, 1e-15);
+	pagmo::algorithm::de algo_2(1, 0.8, 0.9, 2, 1e-15, 1e-15);
 
 	pagmo::algorithm::cstrs_co_evolution algo_constrained(algo, algo_2, 30, 20);
 
