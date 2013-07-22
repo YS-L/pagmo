@@ -48,6 +48,12 @@ namespace pagmo { namespace algorithm {
  * @param[in] pop_2_size population size for the penalty encoding population.
  * @param[in] gen number of generations.
  * @param[in] problem::cstrs_co_evolution::method_type the method used for the population 2.
+ * Three posssibililties are available: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
+ * The simple one is the original version of the Coello/He implementation. The SPLIT_NEQ_EQ,
+ * splits the equalities and inequalities constraints in two different sets for the
+ * penalty weigths, containing respectively inequalities and equalities weigths. The
+ * SPLIT_CONSTRAINTS splits the constraints in M set of weigths with M the number of
+ * constraints.
  * @param[in] pen_lower_bound the lower boundary used for penalty.
  * @param[in] pen_upper_bound the upper boundary used for penalty.
  * @throws value_error if stop is negative

@@ -74,6 +74,7 @@ public:
 protected:
 	std::string human_readable_extra() const;
 	void objfun_impl(fitness_vector &, const decision_vector &) const;
+	bool compare_fitness_impl(const fitness_vector &, const fitness_vector &) const;
 
 private:
 	void compute_penalty(std::vector<double> &, std::vector<int> &, const decision_vector &) const;
@@ -120,6 +121,7 @@ public:
 protected:
 	std::string human_readable_extra() const;
 	void objfun_impl(fitness_vector &, const decision_vector &) const;
+	bool compare_fitness_impl(const fitness_vector &, const fitness_vector &) const;
 
 private:
 	void compute_penalty(double &, int &, const decision_vector &) const;

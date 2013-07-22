@@ -37,18 +37,25 @@
 
 namespace pagmo { namespace algorithm {
 
-/// Self-Adaptive Fitness constraints handling meta-algorithm
+/// Co-Evolution constraints handling meta-algorithm
 /**
  *
- * Seld-Adaptive Fitness constraints handling is a meta-algorithm that allow
+ * Co-Evolution Fitness constraints handling is a meta-algorithm that allow
  * to solve constrained optimization problems. The key idea of this constraint
- * handling technique is to represent the constraint violation by a single
- * infeasibility measure, and to adapt dynamically the penalization of infeasible solutions.
+ * handling technique is to use two different populations that evolves the one after the
+ * other. The first one has an objective function penalized with constraints. The penalty
+ * coefficients are encoded in the population 2 which evolves depending on the average
+ * population 1 fitness.
  *
- * This meta-algorithm is based on the problem self-adaptive.
+ * This meta-algorithm is based on the problems cstrs_co_evolution and cstrs_co_evolution_2.
  *
- * @see Farmani, R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
- * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.
+ * Note: This constraints handling technique can only be used for <b>MINIMIZATION</b> problems.
+ *
+ * @see Coello Coello, C. A. (2000). Use of a self-adaptive penalty approach for engineering optimization problems.
+ * Computers in Industry, 41(2), 113-127.
+ * @see Qie He and Ling Wang. 2007. An effective co-evolutionary particle swarm optimization for constrained engineering design problems.
+ * Eng. Appl. Artif. Intell. 20, 1 (February 2007), 89-99.
+ * DOI=10.1016/j.engappai.2006.03.003 http://dx.doi.org/10.1016/j.engappai.2006.03.003
  *
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */

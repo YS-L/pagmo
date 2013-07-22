@@ -40,6 +40,14 @@ namespace pagmo { namespace problem {
  *
  * @param[in] problem base::problem to be modified to use a co-evolution
  * as constraints handling technique.
+ * @param[in] method method_type to used for the co-evolution constraints
+ * handling technique. Three posssibililties are available: SIMPLE,
+ * SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS. The simple one is the original
+ * version of the Coello/He implementation. The SPLIT_NEQ_EQ, splits the
+ * equalities and inequalities constraints in two different sets for the
+ * penalty weigths, containing respectively inequalities and equalities
+ * weigths. The SPLIT_CONSTRAINTS splits the constraints in M set of weigths
+ * with M the number of constraints.
  *
  */
 cstrs_co_evolution::cstrs_co_evolution(const base &problem, const method_type method):
@@ -126,6 +134,16 @@ void cstrs_co_evolution::objfun_impl(fitness_vector &f, const decision_vector &x
 		break;
 	}
 	}
+}
+
+/// Implementation of fitness vectors comparison.
+/**
+ * @brief compare_fitness_impl calls the compare_fitness method of the original problem.
+ * @return true if v_f1 is dominating v_f2, false otherwise.
+ */
+bool cstrs_co_evolution::compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const
+{
+	return m_original_problem->compare_fitness(v_f1,v_f2);
 }
 
 /// Extra human readable info for the problem.
@@ -398,6 +416,16 @@ void cstrs_co_evolution_2::objfun_impl(fitness_vector &f, const decision_vector 
 	}
 }
 
+/// Implementation of fitness vectors comparison.
+/**
+ * @brief compare_fitness_impl calls the compare_fitness method of the original problem.
+ * @return true if v_f1 is dominating v_f2, false otherwise.
+ */
+bool cstrs_co_evolution_2::compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const
+{
+	return m_original_problem->compare_fitness(v_f1,v_f2);
+}
+
 /// Extra human readable info for the problem.
 /**
  * Will return a formatted string containing the type of constraint handling
@@ -537,4 +565,3 @@ void cstrs_co_evolution_2::compute_penalty(double &sum_viol, int &num_viol, cons
 
 BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::problem::cstrs_co_evolution);
 BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::problem::cstrs_co_evolution_2);
-
