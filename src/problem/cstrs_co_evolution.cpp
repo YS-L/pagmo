@@ -38,7 +38,7 @@ namespace pagmo { namespace problem {
  * Note: This problem is not inteded to be used by itself. Instead use the
  * co-evolution algorithm if you want to solve constrained problems.
  *
- * @param[in] problem base::problem to be modified to use a self-adaptive
+ * @param[in] problem base::problem to be modified to use a co-evolution
  * as constraints handling technique.
  *
  */
@@ -58,7 +58,7 @@ cstrs_co_evolution::cstrs_co_evolution(const base &problem, const method_type me
 
 	// check that the dimension of the problem is 1
 	if (m_original_problem->get_f_dimension() != 1) {
-		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with self adaptive meta problem.");
+		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with co-evolution meta problem.");
 	}
 
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
@@ -186,13 +186,16 @@ int cstrs_co_evolution::get_expected_penalty_coeff_size() {
 	case SIMPLE:
 	{
 		return 2;
+		break;
 	}
 	case SPLIT_NEQ_EQ:
 	{
 		return 4;
+		break;
 	}
 	case SPLIT_CONSTRAINTS:
 		return 2*m_original_problem->get_c_dimension();
+		break;
 	}
 }
 
@@ -303,7 +306,7 @@ void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vec
  * Note: This problem is not inteded to be used by itself. Instead use the
  * co-evolution algorithm if you want to solve constrained problems.
  *
- * @param[in] problem base::problem to be modified to use a self-adaptive
+ * @param[in] problem base::problem to be modified to use a co-evolution
  * as constraints handling technique.
  *
  */
@@ -314,7 +317,14 @@ cstrs_co_evolution_2::cstrs_co_evolution_2(const base &problem, int dimension):
 		 0,
 		 0,
 		 0.),
-	m_original_problem(problem.clone())
+	m_original_problem(problem.clone()),
+	m_sub_pop_2_x_vector(std::vector<decision_vector>(0)),
+					   m_sub_pop_1_f_vector(std::vector< std::vector<double> >(0)),
+					   m_feasible_count_vector(std::vector<int>(0)),
+					   m_feasible_fitness_sum_vector(std::vector<double>(0)),
+					   m_max_feasible_fitness(0.),
+					   m_total_sum_viol(0.),
+					   m_total_num_viol(0)
 {
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
@@ -322,12 +332,10 @@ cstrs_co_evolution_2::cstrs_co_evolution_2(const base &problem, int dimension):
 
 	// check that the dimension of the problem is 1
 	if (m_original_problem->get_f_dimension() != 1) {
-		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with self adaptive meta problem.");
+		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with co evolution meta problem.");
 	}
 
-	//set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
-
-	//std::fill(m_penalty_coeff.begin(),m_penalty_coeff.end(),0.);
+	set_bounds(0.,10000.);
 }
 
 /// Copy Constructor. Performs a deep copy

@@ -52,8 +52,8 @@ namespace pagmo { namespace algorithm {
  * @param[in] pen_upper_bound the upper boundary used for penalty.
  * @throws value_error if stop is negative
  */
-cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, const base &original_algo_2, int gen, int pop_2_size,
-									   problem::cstrs_co_evolution::method_type method,
+cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, const base &original_algo_2, int pop_2_size,
+									   int gen,problem::cstrs_co_evolution::method_type method,
 									   double pen_lower_bound, double pen_upper_bound):
 	base(),m_gen(gen),m_pop_2_size(pop_2_size),m_method(method),
 	m_pen_lower_bound(pen_lower_bound),m_pen_upper_bound(pen_upper_bound)
@@ -70,7 +70,8 @@ cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, const base &or
 
 /// Copy constructor.
 cstrs_co_evolution::cstrs_co_evolution(const cstrs_co_evolution &algo):
-	base(algo),m_original_algo(algo.m_original_algo->clone()),m_gen(algo.m_gen),
+	base(algo),m_original_algo(algo.m_original_algo->clone()),
+	m_original_algo_2(algo.m_original_algo_2->clone()),m_gen(algo.m_gen),
 	m_pop_2_size(algo.m_pop_2_size),m_method(algo.m_method),
 	m_pen_lower_bound(algo.m_pen_lower_bound),m_pen_upper_bound(algo.m_pen_upper_bound)
 {}
@@ -96,9 +97,9 @@ void cstrs_co_evolution::evolve(population &pop) const
 	// get the constraints dimension
 	problem::base::c_size_type prob_c_dimension = prob.get_c_dimension();
 
-	//We perform some checks to determine wether the problem/population are suitable for Self-Adaptive
+	//We perform some checks to determine wether the problem/population are suitable for co-evolution
 	if(prob_c_dimension < 1) {
-		pagmo_throw(value_error,"The problem is not constrained and Self-Adaptive is not suitable to solve it");
+		pagmo_throw(value_error,"The problem is not constrained and co-evolution is not suitable to solve it");
 	}
 
 	// Get out if there is nothing to do.
@@ -112,7 +113,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 	// is necessary and it is not easy to locally update the fitness
 
 	// creates the problem 1 and 2
-	problem::cstrs_co_evolution prob_1(prob, problem::cstrs_co_evolution::SPLIT_CONSTRAINTS);
+	problem::cstrs_co_evolution prob_1(prob, m_method);
 	problem::cstrs_co_evolution_2 prob_2(prob, prob_1.get_expected_penalty_coeff_size());
 
 	// sub population size
@@ -125,13 +126,13 @@ void cstrs_co_evolution::evolve(population &pop) const
 
 	for(population::size_type i=0; i<sub_pop_2_size; i++) {
 		sub_pop_1_x_vector[i] = std::vector<decision_vector>(sub_pop_1_size);
-		sub_pop_1_f_vector[i] = std::vector<decision_vector>(sub_pop_1_size);
+		sub_pop_1_f_vector[i] = std::vector<fitness_vector>(sub_pop_1_size);
 	}
 
 	// initialize sub_pop_1 vectors
 	for(population::size_type j=0; j<sub_pop_2_size; j++) {
 		std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
-		std::vector<decision_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
+		std::vector<fitness_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
 
 		for(population::size_type i=0; i<sub_pop_1_size; i++) {
 			sub_pop_1_x[i] = pop.get_individual(i).cur_x;
@@ -154,10 +155,6 @@ void cstrs_co_evolution::evolve(population &pop) const
 
 	prob_2.set_bounds(lb,ub);
 
-	// const double crossover_rate = 0.8;
-	// ...
-	// int pop_2_x_size = 2 * prob_c_dimension;
-
 	// population 2 initialization
 	// might be done with the problem_2 definition, but didn't want to create a
 	// sub_pop_2 here...
@@ -178,7 +175,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 		for(population::size_type j=0; j<sub_pop_2_size; j++) {
 
 			std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
-			std::vector<decision_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
+			std::vector<fitness_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
 
 			// modify the problem by settin decision vector encoding penalty
 			// coefficients w1 and w2 in prob 1
@@ -272,7 +269,7 @@ void cstrs_co_evolution::set_algorithm(const base &algo)
 std::string cstrs_co_evolution::human_readable_extra() const
 {
 	std::ostringstream s;
-	s << "algorithms: " << m_original_algo->get_name() << ' - ' << m_original_algo_2->get_name() << ' ';
+	s << "algorithms: " << m_original_algo->get_name() << " - " << m_original_algo_2->get_name() << " ";
 	s << "\n\tConstraints handled with co-evolution algorithm";
 	return s.str();
 }

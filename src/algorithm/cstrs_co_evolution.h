@@ -81,6 +81,7 @@ private:
 		ar & m_original_algo_2;
 		ar & const_cast<int &>(m_gen);
 		ar & m_method;
+		ar & m_pop_2_size;
 		ar & m_pen_lower_bound;
 		ar & m_pen_upper_bound;
 	}
