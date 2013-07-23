@@ -48,6 +48,8 @@ namespace pagmo{ namespace problem {
  * The third implementation is the same as the second one but splitting the sum of violations between equality
  * and inequality constraints, resulting in a total of nobj+2 objectives problem.
  *
+ * Note: This constraints handling technique can only be used for <b>MINIMIZATION</b> problems.
+ *
  * @see Coello Coello, C. A. (2002). Theoretical and numerical constraint-handling techniques used with evolutionary algorithms: a survey of the state of the art. Computer methods in applied mechanics and engineering, 191(11), 1245-1287.
  *
  * @see Coello, C. A. C. (2000). Treating constraints as objectives for single-objective evolutionary optimization. Engineering Optimization+ A35, 32(3), 275-308.
@@ -84,6 +86,7 @@ class __PAGMO_VISIBLE con2mo : public base
 	protected:
 		std::string human_readable_extra() const;
 		void objfun_impl(fitness_vector &, const decision_vector &) const;
+		bool compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const;
 
 	private:
 		friend class boost::serialization::access;
