@@ -39,7 +39,7 @@ namespace pagmo { namespace algorithm {
 
 /// Constructor.
 /**
- * Constructs an self adaptive algorithm
+ * Constructs an self adaptive algorithm.
  *
  * @param[in] original_algo pagmo::algorithm to use as 'original' optimization method
  * @throws value_error if gen is negative or zero
@@ -105,7 +105,7 @@ void self_adaptive::evolve(population &pop) const
 			pop_new.push_back(pop.get_individual(i).cur_x);
 		}
 
-		// this constraints handling technique is initially inteded to be
+		// this constraints handling technique is initially intended to be
 		// used as a fitness evaluator for ES, I am not convinced this is the easiest
 		// way to implement it. But for DE, PSO in example, there is no fitness evaluator?
 		m_original_algo->evolve(pop_new);

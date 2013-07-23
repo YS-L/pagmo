@@ -40,14 +40,23 @@ int main()
 	//increment this if you add a multiobjective problem
 	unsigned int n_mo = 1;
 
+	//increment this if you add a constrained problem
+	unsigned int n_con = 1;
+
 	// create two containers of pagmo::algorithms
 	std::vector<algorithm::base_ptr> algos;
 	std::vector<algorithm::base_ptr> algos_new;
-	
-	// fill it up with algorithm (first the multiobjective ones
 
+	// fill it up with algorithm
+	// first the multiobjective ones
 	algos.push_back(algorithm::nsga2(gen,0.5,11,0.3,11).clone());
 	algos_new.push_back(algorithm::nsga2().clone());
+
+	// then the meta-algorithm
+	algos.push_back(algorithm::self_adaptive(algorithm::sga(1),gen).clone());
+	algos_new.push_back(algorithm::self_adaptive().clone());
+
+	// algorithm
 	algos.push_back(algorithm::bee_colony(gen,19).clone());
 	algos_new.push_back(algorithm::bee_colony().clone());
 	algos.push_back(algorithm::cmaes(gen,0.5, 0.5, 0.5, 0.5, 0.7, 1e-5, 1e-5, false).clone());
@@ -91,7 +100,7 @@ int main()
 	algos.push_back(algorithm::gsl_nm(gen,1e-3,0.1).clone());
 	algos_new.push_back(algorithm::gsl_nm().clone());
 	algos.push_back(algorithm::gsl_nm2(gen,1e-3,0.1).clone());
-	algos_new.push_back(algorithm::gsl_nm2().clone()); 
+	algos_new.push_back(algorithm::gsl_nm2().clone());
 	algos.push_back(algorithm::gsl_nm2rand(gen,1e-3,0.1).clone());
 	algos_new.push_back(algorithm::gsl_nm2rand().clone());
 	algos.push_back(algorithm::gsl_pr(gen,1e-3,1e-3,0.03,1e-3).clone());
@@ -120,7 +129,7 @@ int main()
 	algos_new.push_back(algorithm::snopt().clone());
 #endif
 
-// IPOPT algorithm.
+	// IPOPT algorithm.
 #ifdef PAGMO_ENABLE_IPOPT
 	algos.push_back(algorithm::ipopt(gen, 2.3E-6, 2.3E-6, 2.3E-6, false, 2.0, 0.234).clone());
 	algos_new.push_back(algorithm::ipopt().clone());
@@ -131,55 +140,62 @@ int main()
 	// and pick a multiobjective one
 	problem::zdt1 prob_mo(10);
 
+	// and pick a constrained one
+	problem::cec2006 prob_con(4);
+
 	// make a population out of it
 	population pop_original(prob,pop_size);
 	population pop_original_mo(prob_mo,pop_size);
+	population pop_original_con(prob_con,pop_size);
 
 	//serialize algos and deserialize into algos_new checking they are then identical
 	for (size_t i=0; i< algos.size(); ++i) {
 		{
-		// create and open a character archive for output
-		std::ofstream ofs("test.ar");
-		// save data to archive
-		boost::archive::text_oarchive oa(ofs);
-		// write class instance to archive
-		oa & algos[i];
-		// archive and stream closed when destructors are called
+			// create and open a character archive for output
+			std::ofstream ofs("test.ar");
+			// save data to archive
+			boost::archive::text_oarchive oa(ofs);
+			// write class instance to archive
+			oa & algos[i];
+			// archive and stream closed when destructors are called
 		}
-	
+
 		{
-		// create and open an archive for input
-		std::ifstream ifs("test.ar");
-		boost::archive::text_iarchive ia(ifs);
-		// read class state from archive
-		ia & algos_new[i];
-		// archive and stream closed when destructors are called
-		}	
+			// create and open an archive for input
+			std::ifstream ifs("test.ar");
+			boost::archive::text_iarchive ia(ifs);
+			// read class state from archive
+			ia & algos_new[i];
+			// archive and stream closed when destructors are called
+		}
 
 
 		{
-		//copy the original population
-		population pop1(prob), pop2(prob);
-		if (i<n_mo) {
-			pop1 = population(pop_original_mo); 
-			pop2 = population(pop_original_mo);
-		}
-		else {
-			pop1 = population(pop_original);
-			pop2 = population(pop_original);
-		}
-		algos[i]->evolve(pop1);
-		algos_new[i]->evolve(pop2);
-		std::cout << std::endl << std::setw(80) << algos[i]->get_name();
-		decision_vector x1(pop1.champion().x), x2(pop2.champion().x);
-		if (std::equal(x1.begin(),x1.end(),x2.begin())) {
-			std::cout << ": pass";
-		} else {
-			std::cout << ": Champion is different:" << std::endl;
-			std::cout << x1 << std::endl;
-			std::cout << x2 << std::endl;
-			return 1;
-		}
+			//copy the original population
+			population pop1(prob), pop2(prob);
+			if (i<n_mo) {
+				pop1 = population(pop_original_mo);
+				pop2 = population(pop_original_mo);
+			} else if (i<(n_mo+n_con) && (i>=n_mo)) {
+				pop1 = population(pop_original_con);
+				pop2 = population(pop_original_con);
+			}
+			else {
+				pop1 = population(pop_original);
+				pop2 = population(pop_original);
+			}
+			algos[i]->evolve(pop1);
+			algos_new[i]->evolve(pop2);
+			std::cout << std::endl << std::setw(80) << algos[i]->get_name();
+			decision_vector x1(pop1.champion().x), x2(pop2.champion().x);
+			if (std::equal(x1.begin(),x1.end(),x2.begin())) {
+				std::cout << ": pass";
+			} else {
+				std::cout << ": Champion is different:" << std::endl;
+				std::cout << x1 << std::endl;
+				std::cout << x2 << std::endl;
+				return 1;
+			}
 		}
 	}
 	std::cout << std::endl;

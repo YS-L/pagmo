@@ -36,8 +36,12 @@ namespace pagmo { namespace problem {
 /**
  * Constructor using initial constrained problem
  *
+ * Note: This problem is not inteded to be used by itself. Instead use the
+ * self-adaptive algorithm if you want to solve constrained problems.
+ *
  * @param[in] problem base::problem to be modified to use a self-adaptive
  * as constraints handling technique.
+ * @param[in] pop population to be used to set up the penalty coefficients.
  *
  */
 self_adaptive::self_adaptive(const base &problem, const population &pop):
@@ -125,6 +129,16 @@ void self_adaptive::objfun_impl(fitness_vector &f, const decision_vector &x) con
 		// apply penalty 2
 		f[0] += m_scaling_factor * std::fabs(f[0]) * ( (std::exp(2. * solution_infeasibility) - 1.) / (std::exp(2.) - 1.) );
 	}
+}
+
+/// Implementation of fitness vectors comparison.
+/**
+ * @brief compare_fitness_impl calls the compare_fitness method of the original problem.
+ * @return true if v_f1 is dominating v_f2, false otherwise.
+ */
+bool self_adaptive::compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const
+{
+	return m_original_problem->compare_fitness(v_f1,v_f2);
 }
 
 /// Extra human readable info for the problem.
@@ -287,14 +301,31 @@ void self_adaptive::update_penalty_coeff(const population &pop)
 
 		// case of equality? what do we do?
 		for(population::size_type i=0; i<pop_size; i++) {
+			const population::individual_type &current_individual = pop.get_individual(i);
+
 			if(solution_infeasibility.at(i) <= solution_infeasibility.at(hat_down_idx)) {
-				hat_down_idx = i;
+				if(solution_infeasibility.at(i) == solution_infeasibility.at(hat_down_idx)) {
+					if(m_original_problem->compare_fitness(current_individual.cur_f, pop.get_individual(hat_down_idx).cur_f)) {
+						hat_down_idx = i;
+					}
+				} else {
+					hat_down_idx = i;
+				}
 			}
 		}
+
 		// worst individual
 		for(population::size_type i=0; i<pop_size; i++) {
+			const population::individual_type &current_individual = pop.get_individual(i);
+
 			if(solution_infeasibility.at(i) >= solution_infeasibility.at(hat_up_idx)) {
-				hat_up_idx = i;
+				if(solution_infeasibility.at(i) == solution_infeasibility.at(hat_up_idx)) {
+					if(m_original_problem->compare_fitness(pop.get_individual(hat_up_idx).cur_f, current_individual.cur_f)) {
+						hat_up_idx = i;
+					}
+				} else {
+					hat_up_idx = i;
+				}
 			}
 		}
 

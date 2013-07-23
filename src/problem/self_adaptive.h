@@ -71,6 +71,7 @@ public:
 protected:
 	std::string human_readable_extra() const;
 	void objfun_impl(fitness_vector &, const decision_vector &) const;
+	bool compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const;
 
 private:
 	void update_c_scaling(const population &pop);

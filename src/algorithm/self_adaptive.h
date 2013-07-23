@@ -31,7 +31,7 @@
 #include "../population.h"
 #include "../serialization.h"
 #include "base.h"
-#include "cs.h"
+#include "jde.h"
 
 namespace pagmo { namespace algorithm {
 
@@ -45,6 +45,8 @@ namespace pagmo { namespace algorithm {
  *
  * This meta-algorithm is based on the problem self-adaptive.
  *
+ * Note: This constraints handling technique can only be used for <b>MINIMIZATION</b> problems
+ *
  * @see Farmani, R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
  * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.
  *
@@ -54,7 +56,7 @@ namespace pagmo { namespace algorithm {
 class __PAGMO_VISIBLE self_adaptive: public base
 {
 public:
-	self_adaptive(const base & = cs(), int gen = 1);
+	self_adaptive(const base & = jde(), int gen = 1);
 	self_adaptive(const self_adaptive &);
 	base_ptr clone() const;
 
