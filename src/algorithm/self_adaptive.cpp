@@ -87,7 +87,8 @@ void self_adaptive::evolve(population &pop) const
 		return;
 	}
 
-	problem::self_adaptive prob_new(prob,pop); // Create the new problem;
+	// Create the new problem;
+	problem::self_adaptive prob_new(prob,pop);
 
 	// Main Self-Adaptive loop
 	for(int k=0; k<m_gen; k++) {

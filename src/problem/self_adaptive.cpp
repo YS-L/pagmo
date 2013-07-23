@@ -110,6 +110,7 @@ base_ptr self_adaptive::clone() const
  */
 void self_adaptive::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
+
 	m_original_problem->objfun(f, x);
 
 	// test feasibility of the vector
@@ -182,7 +183,7 @@ void self_adaptive::update_penalty_coeff(const population &pop)
 	for(population::size_type i=0; i<pop_size; i++) {
 		const population::individual_type &current_individual = pop.get_individual(i);
 
-		if(m_original_problem->feasibility_x(current_individual.cur_x)) {
+		if(m_original_problem->feasibility_c(current_individual.cur_c)) {
 			feasible_idx.push_back(i);
 		} else {
 			infeasible_idx.push_back(i);
@@ -394,7 +395,7 @@ void self_adaptive::update_c_scaling(const population &pop)
 		// updates the current constraint vector
 		const population::individual_type &current_individual = pop.get_individual(i);
 
-		m_original_problem->compute_constraints(c,current_individual.cur_x);
+		c = current_individual.cur_c;
 
 		// sets the right definition of the constraints (can be in base problem? currently used
 		// by con2mo as well)
