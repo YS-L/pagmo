@@ -201,6 +201,15 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	algorithm_wrapper<algorithm::ms>("ms","Multistart.")
 		.def(init<const algorithm::base &, int>())
 		.add_property("algorithm",&algorithm::ms::get_algorithm,&algorithm::ms::set_algorithm);
+
+	// Constraints Co-Evolution enums
+	enum_<problem::cstrs_co_evolution::method_type>("_method_type")
+		.value("SIMPLE", problem::cstrs_co_evolution::SIMPLE)
+		.value("SPLIT_NEQ_EQ", problem::cstrs_co_evolution::SPLIT_NEQ_EQ)
+		.value("SPLIT_CONSTRAINTS", problem::cstrs_co_evolution::SPLIT_CONSTRAINTS);
+	// Constraints Co-Evolution.
+	algorithm_wrapper<algorithm::cstrs_co_evolution>("cstrs_co_evolution","Constraints Co-Evolution.")
+		.def(init<optional<const algorithm::base &,const algorithm::base &,int,int,problem::cstrs_co_evolution::method_type,double,double> >());
 	
 	// Particle Swarm Optimization (Steady state)
 	algorithm_wrapper<algorithm::pso>("pso", "Particle Swarm Optimization (steady-state)")
