@@ -420,8 +420,8 @@ void self_adaptive::update_c_scaling(const population &pop)
  * @param[in,out] std::vector<double solution infeasibility vector to update.
  * @param[in] population pop.
  */
-void self_adaptive::compute_pop_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop)
-{
+void self_adaptive::compute_pop_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop) const
+{ 
 	// Let's store some useful variables.
 	const population::size_type pop_size = pop.size();
 

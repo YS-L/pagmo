@@ -76,7 +76,7 @@ protected:
 private:
 	void update_c_scaling(const population &pop);
 	double compute_solution_infeasibility(const decision_vector &x) const;
-	void compute_pop_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop);
+	void compute_pop_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop) const;
 
 private:
 	friend class boost::serialization::access;
