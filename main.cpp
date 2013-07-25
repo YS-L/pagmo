@@ -36,12 +36,12 @@ int main()
 
 	//pagmo::algorithm::monte_carlo algo(1); //only one generation for the algo!
 	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
-	pagmo::algorithm::sga algo(1,0.9,0.04, 1000,
-							   algorithm::sga::mutation::GAUSSIAN, 0.1,
-							   algorithm::sga::selection::ROULETTE,
-							   algorithm::sga::crossover::EXPONENTIAL); //only one generation for the algo!
+	//pagmo::algorithm::sga algo(1,0.9,0.04, 1000,
+	//						   algorithm::sga::mutation::GAUSSIAN, 0.1,
+	//						   algorithm::sga::selection::ROULETTE,
+	//						   algorithm::sga::crossover::EXPONENTIAL); //only one generation for the algo!
 	//pagmo::algorithm::cmaes algo(1); //only one generation for the algo!
-	//pagmo::algorithm::de algo(1); //only one generation for the algo!
+	pagmo::algorithm::de algo(1); //only one generation for the algo!
 	//pagmo::algorithm::pso algo(1); //only one generation for the algo!
 	pagmo::algorithm::self_adaptive algo_constrained(algo, 5000);
 

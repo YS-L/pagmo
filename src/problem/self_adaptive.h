@@ -32,6 +32,9 @@
 #include "cec2006.h"
 #include "base.h"
 
+#include <boost/functional/hash.hpp>
+#include <boost/serialization/map.hpp>
+
 namespace pagmo{ namespace problem {
 
 /// Constrainted self adaptive meta-problem
@@ -75,8 +78,7 @@ protected:
 
 private:
 	void update_c_scaling(const population &pop);
-	double compute_solution_infeasibility(const decision_vector &x) const;
-	void compute_pop_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop);
+	double compute_solution_infeasibility(const constraint_vector &c) const;
 
 private:
 	friend class boost::serialization::access;
@@ -94,6 +96,8 @@ private:
 		ar & m_i_hat_down;
 		ar & m_i_hat_up;
 		ar & m_i_hat_round;
+		ar & m_map_fitness;
+		ar & m_map_constraint;
 	}
 	base_ptr m_original_problem;
 
@@ -109,10 +113,16 @@ private:
 	double m_i_hat_down;
 	double m_i_hat_up;
 	double m_i_hat_round;
+
+	std::map<std::size_t, fitness_vector> m_map_fitness;
+	std::map<std::size_t, constraint_vector> m_map_constraint;
+
+	// no need to serialize the hasher (and impossible)
+	boost::hash< std::vector<double> > m_decision_vector_hash;
 };
 
 }} //namespaces
 
 BOOST_CLASS_EXPORT_KEY(pagmo::problem::self_adaptive);
 
-#endif // PAGMO_PROBLEM_self_adaptive_H
+#endif // PAGMO_PROBLEM_SELF_ADAPTIVE_H

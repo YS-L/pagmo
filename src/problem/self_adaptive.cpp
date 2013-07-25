@@ -60,7 +60,10 @@ self_adaptive::self_adaptive(const base &problem, const population &pop):
 	m_f_hat_round(0),
 	m_i_hat_down(0.0),
 	m_i_hat_up(0.0),
-	m_i_hat_round(0.0)
+	m_i_hat_round(0.0),
+	m_decision_vector_hash(),
+	m_map_fitness(),
+	m_map_constraint()
 {
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
@@ -92,7 +95,10 @@ self_adaptive::self_adaptive(const self_adaptive &prob):
 	m_f_hat_round(prob.m_f_hat_round),
 	m_i_hat_down(prob.m_i_hat_down),
 	m_i_hat_up(prob.m_i_hat_up),
-	m_i_hat_round(prob.m_i_hat_round)
+	m_i_hat_round(prob.m_i_hat_round),
+	m_decision_vector_hash(prob.m_decision_vector_hash),
+	m_map_fitness(prob.m_map_fitness),
+	m_map_constraint(prob.m_map_constraint)
 {
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
 }
@@ -110,15 +116,32 @@ base_ptr self_adaptive::clone() const
  */
 void self_adaptive::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
+	std::map<std::size_t, fitness_vector>::const_iterator it_f;
+	std::map<std::size_t, constraint_vector>::const_iterator it_c;
 
-	m_original_problem->objfun(f, x);
+	double solution_infeasibility;
 
-	// test feasibility of the vector
-	if((!m_original_problem->feasibility_x(x)) && !(m_c_scaling.size() == 0)) {
+	it_f = m_map_fitness.find(m_decision_vector_hash(x));
+	if(it_f != m_map_fitness.end()) {
+		// we suppose that the constraints is also available
+		it_c = m_map_constraint.find(m_decision_vector_hash(x));
 
-		double solution_infeasibility = compute_solution_infeasibility(x);
+		f = it_f->second;
 
-		// apply penalty
+		solution_infeasibility = compute_solution_infeasibility(it_c->second);
+	} else {
+		// we compute the function f
+		m_original_problem->objfun(f, x);
+
+		// we compute the constraints
+		constraint_vector c(m_original_problem->get_c_dimension(), 0.);
+		m_original_problem->compute_constraints(c,x);
+
+		solution_infeasibility = compute_solution_infeasibility(c);
+	}
+
+	if(solution_infeasibility > 0.) {
+		// apply penalty 1
 		if(m_apply_penalty_1) {
 			double inf_tilde = 0.;
 			inf_tilde = (solution_infeasibility - m_i_hat_down) /
@@ -176,6 +199,16 @@ void self_adaptive::update_penalty_coeff(const population &pop)
 		return;
 	}
 
+	m_map_fitness.clear();
+	m_map_constraint.clear();
+	// store f and c in maps depending on the the x hash
+	for(population::size_type i=0; i<pop_size; i++) {
+		const population::individual_type &current_individual = pop.get_individual(i);
+		// m_map_fitness.insert(std::pair<std::size_t, fitness_vector>(m_decision_vector_hash(current_individual.cur_x),current_individual.cur_f));
+		m_map_fitness[m_decision_vector_hash(current_individual.cur_x)]=current_individual.cur_f;
+		m_map_constraint[m_decision_vector_hash(current_individual.cur_x)]=current_individual.cur_c;
+	}
+
 	std::vector<population::size_type> feasible_idx(0);
 	std::vector<population::size_type> infeasible_idx(0);
 
@@ -198,13 +231,25 @@ void self_adaptive::update_penalty_coeff(const population &pop)
 	m_apply_penalty_1 = false;
 	m_scaling_factor = 0.;
 
+	// updates the c_scaling, needed for solution infeasibility computation
+	update_c_scaling(pop);
+
+	// evaluate solutions infeasibility
+	//compute_pop_solution_infeasibility(solution_infeasibility, pop);
+
 	std::vector<double> solution_infeasibility(pop_size);
 	std::fill(solution_infeasibility.begin(),solution_infeasibility.end(),0.);
 
-	// updates the c_scaling, needed for solution infeasibility computation
-	update_c_scaling(pop);
 	// evaluate solutions infeasibility
-	compute_pop_solution_infeasibility(solution_infeasibility, pop);
+	solution_infeasibility.resize(pop_size);
+	std::fill(solution_infeasibility.begin(),solution_infeasibility.end(),0.);
+
+	for(population::size_type i=0; i<pop_size; i++) {
+		const population::individual_type &current_individual = pop.get_individual(i);
+
+		// compute the infeasibility of the constraint
+		solution_infeasibility[i] = compute_solution_infeasibility(current_individual.cur_c);
+	}
 
 	// search position of x_hat_down, x_hat_up and x_hat_round
 	population::size_type hat_down_idx = -1;
@@ -379,7 +424,7 @@ void self_adaptive::update_c_scaling(const population &pop)
 	const population::size_type pop_size = pop.size();
 
 	// get the constraints dimension
-	constraint_vector c(m_original_problem->get_c_dimension(), 0.);
+	//constraint_vector c(m_original_problem->get_c_dimension(), 0.);
 	problem::base::c_size_type prob_c_dimension = m_original_problem->get_c_dimension();
 	problem::base::c_size_type number_of_eq_constraints =
 			m_original_problem->get_c_dimension() -
@@ -395,43 +440,16 @@ void self_adaptive::update_c_scaling(const population &pop)
 		// updates the current constraint vector
 		const population::individual_type &current_individual = pop.get_individual(i);
 
-		c = current_individual.cur_c;
+		const constraint_vector &c = current_individual.cur_c;
 
-		// sets the right definition of the constraints (can be in base problem? currently used
+		// computes scaling with the right definition of the constraints (can be in base problem? currently used
 		// by con2mo as well)
 		for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
-			c[j] = std::abs(c.at(j)) - c_tol.at(j);
+			m_c_scaling[j] = std::max(m_c_scaling[j], std::max(0., (std::abs(c.at(j)) - c_tol.at(j))) );
 		}
-		for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-			c[j] = std::max(0.,c.at(j));
+		for(problem::base::c_size_type j=number_of_eq_constraints; j<prob_c_dimension; j++) {
+			m_c_scaling[j] = std::max(m_c_scaling[j], std::max(0.,c.at(j)) );
 		}
-
-		// computes scaling
-		for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-			m_c_scaling[j] = std::max(m_c_scaling[j],c[j]);
-		}
-	}
-}
-
-/// Computes the solution infeasibility measure for the full population,
-/// need the constraints scaling to be updated before calling this method.
-/**
- * Updates the solution infeasibility vector with the population given.
- * @param[in,out] std::vector<double solution infeasibility vector to update.
- * @param[in] population pop.
- */
-void self_adaptive::compute_pop_solution_infeasibility(std::vector<double> &solution_infeasibility, const population &pop)
-{
-	// Let's store some useful variables.
-	const population::size_type pop_size = pop.size();
-
-	// evaluate solutions infeasibility
-	solution_infeasibility.resize(pop_size);
-	std::fill(solution_infeasibility.begin(),solution_infeasibility.end(),0.);
-
-	for(population::size_type i=0; i<pop_size; i++) {
-		const population::individual_type &current_individual = pop.get_individual(i);
-		solution_infeasibility[i] = compute_solution_infeasibility(current_individual.cur_x);
 	}
 }
 
@@ -442,37 +460,32 @@ void self_adaptive::compute_pop_solution_infeasibility(std::vector<double> &solu
  * @param[in] decision_vector x.
  * @param[out] solution infeasibility.
  */
-double self_adaptive::compute_solution_infeasibility(const decision_vector &x) const
+double self_adaptive::compute_solution_infeasibility(const constraint_vector &c) const
 {
 	// get the constraints dimension
-	constraint_vector c(m_original_problem->get_c_dimension(), 0.);
 	problem::base::c_size_type prob_c_dimension = m_original_problem->get_c_dimension();
 	problem::base::c_size_type number_of_eq_constraints =
 			m_original_problem->get_c_dimension() -
 			m_original_problem->get_ic_dimension();
 
-	m_original_problem->compute_constraints(c,x);
-
 	double solution_infeasibility = 0.;
 
-	// sets the right definition of the constraints (can be in base problem? currently used
-	// by con2mo as well)
 	const std::vector<double> &c_tol = m_original_problem->get_c_tol();
 
+	// computes solution infeasibility with the right definition of the constraints (can be in base problem? currently used
+	// by con2mo as well)
 	for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
-		c[j] = std::abs(c.at(j)) - c_tol.at(j);
-	}
-	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-		c[j] = std::max(0.,c.at(j));
-	}
-
-	// computes solution infeasibility
-	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
 		// test needed otherwise the c_scaling can be 0, and division by 0 occurs
 		if(m_c_scaling[j] > 0.) {
-			solution_infeasibility += c[j]/m_c_scaling[j];
+			solution_infeasibility += std::max(0.,(std::abs(c.at(j)) - c_tol.at(j))) / m_c_scaling[j];
 		}
 	}
+	for(problem::base::c_size_type j=number_of_eq_constraints; j<prob_c_dimension; j++) {
+		if(m_c_scaling[j] > 0.) {
+			solution_infeasibility += std::max(0.,c.at(j)) / m_c_scaling[j];
+		}
+	}
+
 	solution_infeasibility /= prob_c_dimension;
 
 	return solution_infeasibility;
