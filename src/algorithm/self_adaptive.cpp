@@ -94,13 +94,16 @@ void self_adaptive::evolve(population &pop) const
 	for(int k=0; k<m_gen; k++) {
 		std::cout << "current generation: " << k << std::endl;
 
-		// Need to reset the cache?
-		prob_new.reset_caches();
+		// at the first iteration the problem is not changed, 
+		// for k>0 the problem is gonna change, the cache need to be reset and the population cleared
+		if(k>0){ 
+			prob_new.reset_caches();
+			prob_new.update_penalty_coeff(pop);
+		}
 
-		prob_new.update_penalty_coeff(pop);
+		// if the problem has changed it needs to be reassigned to the population
 		population pop_new(prob_new,0);
 
-		pop_new.clear();
 		for(population::size_type i=0; i<pop_size; i++) {
 			// Evaluate according to the new fitness;
 			pop_new.push_back(pop.get_individual(i).cur_x);

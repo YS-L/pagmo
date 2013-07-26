@@ -457,7 +457,7 @@ void self_adaptive::update_c_scaling(const population &pop)
 /// need the constraints scaling to be updated before calling this method.
 /**
  * Updates the solution infeasibility vector with the population given.
- * @param[in] decision_vector x.
+ * @param[in] constraint_vector c.
  * @param[out] solution infeasibility.
  */
 double self_adaptive::compute_solution_infeasibility(const constraint_vector &c) const
