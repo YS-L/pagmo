@@ -33,7 +33,6 @@
 #include "base.h"
 #include "jde.h"
 #include "sga.h"
-#include "../problem/cstrs_co_evolution.h"
 
 namespace pagmo { namespace algorithm {
 
@@ -63,9 +62,19 @@ namespace pagmo { namespace algorithm {
 class __PAGMO_VISIBLE cstrs_co_evolution: public base
 {
 public:
+	/// Type of co-evolution.
+	/**
+	* Definition of three types of co-evolution: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
+	* The SIMPLE, is co-evolution defined by COELLO. The SPLIT_NEQ_EQ, splits equalities and
+	* inequalities constraints (4 penalty coefficients). The SPLIT_CONSTRAINTS split the
+	* number of coefficients upon the number of penlaty coefficients (2 * c_dimension).
+	*/
+	// co-evolution simple, split_neq_eq, split_constraints
+	enum method_type {SIMPLE = 0, SPLIT_NEQ_EQ = 1, SPLIT_CONSTRAINTS = 2};
+
 	cstrs_co_evolution(const base & = jde(), const base & = sga(1), int pop_2_size = 30, int gen = 1,
-					   problem::cstrs_co_evolution::method_type method = problem::cstrs_co_evolution::SIMPLE,
-					   double pen_lower_bound = 0., double pen_upper_bound = 100000.);
+					   method_type method = SIMPLE, double pen_lower_bound = 0.,
+					   double pen_upper_bound = 100000.);
 	cstrs_co_evolution(const cstrs_co_evolution &);
 	base_ptr clone() const;
 
@@ -99,7 +108,7 @@ private:
 	// population 2 size
 	int m_pop_2_size;
 	// problem 2 variables
-	problem::cstrs_co_evolution::method_type m_method;
+	method_type m_method;
 	double m_pen_lower_bound;
 	double m_pen_upper_bound;
 };

@@ -31,6 +31,7 @@
 #include "../types.h"
 #include "cec2006.h"
 #include "base.h"
+#include "../algorithm/cstrs_co_evolution.h"
 
 namespace pagmo{ namespace problem {
 
@@ -50,18 +51,8 @@ namespace pagmo{ namespace problem {
 class __PAGMO_VISIBLE cstrs_co_evolution : public base
 {
 public:
-	/// Type of co-evolution.
-	/**
-	* Definition of three types of co-evolution: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
-	* The SIMPLE, is co-evolution defined by COELLO. The SPLIT_NEQ_EQ, splits equalities and
-	* inequalities constraints (4 penalty coefficients). The SPLIT_CONSTRAINTS split the
-	* number of coefficients upon the number of penlaty coefficients (2 * c_dimension).
-	*/
-	// co-evolution simple, split_neq_eq, split_constraints
-	enum method_type {SIMPLE = 0, SPLIT_NEQ_EQ = 1, SPLIT_CONSTRAINTS = 2};
-
 	//constructors
-	cstrs_co_evolution(const base & = cec2006(4), const method_type = SIMPLE);
+	cstrs_co_evolution(const base & = cec2006(4), const algorithm::cstrs_co_evolution::method_type = algorithm::cstrs_co_evolution::SIMPLE);
 
 	//copy constructor
 	cstrs_co_evolution(const cstrs_co_evolution &);
@@ -87,12 +78,12 @@ private:
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_problem;
 		ar & m_penalty_coeff;
-		ar & const_cast<method_type &>(m_method);
+		ar & const_cast<algorithm::cstrs_co_evolution::method_type &>(m_method);
 	}
 	base_ptr m_original_problem;
 	std::vector<double> m_penalty_coeff;
 
-	const method_type m_method;
+	const algorithm::cstrs_co_evolution::method_type m_method;
 };
 
 class __PAGMO_VISIBLE cstrs_co_evolution_2 : public base

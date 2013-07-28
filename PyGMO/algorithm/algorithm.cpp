@@ -174,7 +174,6 @@ BOOST_PYTHON_MODULE(_algorithm) {
 		.add_property("ftol",&algorithm::cmaes::get_ftol,&algorithm::cmaes::set_ftol)
 		.add_property("xtol",&algorithm::cmaes::get_xtol,&algorithm::cmaes::set_xtol);
 
-
 	// Monte-carlo.
 	algorithm_wrapper<algorithm::monte_carlo>("monte_carlo","Monte-Carlo search.")
 		.def(init<int>());
@@ -203,13 +202,13 @@ BOOST_PYTHON_MODULE(_algorithm) {
 		.add_property("algorithm",&algorithm::ms::get_algorithm,&algorithm::ms::set_algorithm);
 
 	// Constraints Co-Evolution enums
-	enum_<problem::cstrs_co_evolution::method_type>("_method_type")
-		.value("SIMPLE", problem::cstrs_co_evolution::SIMPLE)
-		.value("SPLIT_NEQ_EQ", problem::cstrs_co_evolution::SPLIT_NEQ_EQ)
-		.value("SPLIT_CONSTRAINTS", problem::cstrs_co_evolution::SPLIT_CONSTRAINTS);
+	enum_<algorithm::cstrs_co_evolution::method_type>("_method_type")
+		.value("SIMPLE", algorithm::cstrs_co_evolution::SIMPLE)
+		.value("SPLIT_NEQ_EQ", algorithm::cstrs_co_evolution::SPLIT_NEQ_EQ)
+		.value("SPLIT_CONSTRAINTS", algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS);
 	// Constraints Co-Evolution.
 	algorithm_wrapper<algorithm::cstrs_co_evolution>("cstrs_co_evolution","Constraints Co-Evolution.")
-		.def(init<optional<const algorithm::base &,const algorithm::base &,int,int,problem::cstrs_co_evolution::method_type,double,double> >());
+		.def(init<optional<const algorithm::base &,const algorithm::base &,int,int,algorithm::cstrs_co_evolution::method_type,double,double> >());
 	
 	// Particle Swarm Optimization (Steady state)
 	algorithm_wrapper<algorithm::pso>("pso", "Particle Swarm Optimization (steady-state)")

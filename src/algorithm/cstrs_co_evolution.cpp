@@ -59,8 +59,8 @@ namespace pagmo { namespace algorithm {
  * @throws value_error if stop is negative
  */
 cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, const base &original_algo_2, int pop_2_size,
-									   int gen,problem::cstrs_co_evolution::method_type method,
-									   double pen_lower_bound, double pen_upper_bound):
+									   int gen,method_type method, double pen_lower_bound,
+									   double pen_upper_bound):
 	base(),m_gen(gen),m_pop_2_size(pop_2_size),m_method(method),
 	m_pen_lower_bound(pen_lower_bound),m_pen_upper_bound(pen_upper_bound)
 {

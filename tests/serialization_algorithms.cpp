@@ -53,7 +53,7 @@ int main()
 	algos_new.push_back(algorithm::nsga2().clone());
 
 	// then the meta-algorithm
-	algos.push_back(algorithm::cstrs_co_evolution(algorithm::de(gen),algorithm::de(1),20,30,problem::cstrs_co_evolution::SPLIT_CONSTRAINTS).clone());
+	algos.push_back(algorithm::cstrs_co_evolution(algorithm::de(gen),algorithm::de(1),20,30,algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS).clone());
 	algos_new.push_back(algorithm::cstrs_co_evolution().clone());
 
 	// algorithm

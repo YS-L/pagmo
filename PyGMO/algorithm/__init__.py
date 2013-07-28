@@ -487,9 +487,9 @@ mbh._orig_init = mbh.__init__
 mbh.__init__ = _mbh_ctor
 
 # Renaming and placing the enums
-_problem.cstrs_co_evolution.method = _problem._method_type
+_algorithm.cstrs_co_evolution.method = _algorithm._method_type
 
-def _cstrs_co_evolution_ctor(self, algorithm = _algorithm.jde(), algorithm_2 = _algorithm.jde(),pop_2_size = 30,gen = 20,method = cstrs_co_evolution.method.SIMPLE,pen_lower_bound = 0,pen_upper_bound = 100000):
+def _cstrs_co_evolution_ctor(self,algorithm = _algorithm.jde(),algorithm_2 = _algorithm.jde(),pop_2_size = 30,gen = 20,method = cstrs_co_evolution.method.SIMPLE,pen_lower_bound = 0.,pen_upper_bound = 100000.):
 	"""
     Constructs a co-evolution adaptive algorithm.
 	

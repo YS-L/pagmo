@@ -50,7 +50,7 @@ namespace pagmo { namespace problem {
  * with M the number of constraints.
  *
  */
-cstrs_co_evolution::cstrs_co_evolution(const base &problem, const method_type method):
+cstrs_co_evolution::cstrs_co_evolution(const base &problem, const algorithm::cstrs_co_evolution::method_type method):
 	base((int)problem.get_dimension(),
 		 problem.get_i_dimension(),
 		 problem.get_f_dimension(),
@@ -58,7 +58,8 @@ cstrs_co_evolution::cstrs_co_evolution(const base &problem, const method_type me
 		 0,
 		 0.),
 	m_original_problem(problem.clone()),
-	m_method(method)
+	m_method(method),
+	m_penalty_coeff()
 {
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
@@ -71,7 +72,6 @@ cstrs_co_evolution::cstrs_co_evolution(const base &problem, const method_type me
 
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
 
-	m_penalty_coeff.resize(2);
 	std::fill(m_penalty_coeff.begin(),m_penalty_coeff.end(),0.);
 }
 
@@ -114,18 +114,18 @@ void cstrs_co_evolution::objfun_impl(fitness_vector &f, const decision_vector &x
 	// assuming minimization
 	switch(m_method)
 	{
-	case SIMPLE:
+	case algorithm::cstrs_co_evolution::SIMPLE:
 	{
 		f[0] += sum_viol.at(0) * m_penalty_coeff.at(0) + double(num_viol.at(0)) * m_penalty_coeff.at(1);
 		break;
 	}
-	case SPLIT_NEQ_EQ:
+	case algorithm::cstrs_co_evolution::SPLIT_NEQ_EQ:
 	{
 		f[0] += sum_viol.at(0) * m_penalty_coeff.at(0) + double(num_viol.at(0)) * m_penalty_coeff.at(1);
 		f[0] += sum_viol.at(1) * m_penalty_coeff.at(2) + double(num_viol.at(1)) * m_penalty_coeff.at(3);
 		break;
 	}
-	case SPLIT_CONSTRAINTS:
+	case algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS:
 	{
 		int c_dimension = m_original_problem->get_c_dimension();
 		for(int i=0; i<c_dimension; i++) {
@@ -173,21 +173,21 @@ void cstrs_co_evolution::set_penalty_coeff(const std::vector<double> &penalty_co
 {
 	switch(m_method)
 	{
-	case SIMPLE:
+	case algorithm::cstrs_co_evolution::SIMPLE:
 	{
 		if(penalty_coeff.size() != 2) {
 			pagmo_throw(value_error,"The size of the penalty coefficient vector is not 2.");
 		}
 		break;
 	}
-	case SPLIT_NEQ_EQ:
+	case algorithm::cstrs_co_evolution::SPLIT_NEQ_EQ:
 	{
 		if(penalty_coeff.size() != 4) {
 			pagmo_throw(value_error,"The size of the penalty coefficient vector is not 4.");
 		}
 		break;
 	}
-	case SPLIT_CONSTRAINTS:
+	case algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS:
 		if(penalty_coeff.size() != 2 * m_original_problem->get_c_dimension()) {
 			pagmo_throw(value_error,"The size of the penalty coefficient vector is not 2*number of constraints");
 		}
@@ -201,17 +201,17 @@ void cstrs_co_evolution::set_penalty_coeff(const std::vector<double> &penalty_co
 int cstrs_co_evolution::get_expected_penalty_coeff_size() {
 	switch(m_method)
 	{
-	case SIMPLE:
+	case algorithm::cstrs_co_evolution::SIMPLE:
 	{
 		return 2;
 		break;
 	}
-	case SPLIT_NEQ_EQ:
+	case algorithm::cstrs_co_evolution::SPLIT_NEQ_EQ:
 	{
 		return 4;
 		break;
 	}
-	case SPLIT_CONSTRAINTS:
+	case algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS:
 		return 2*m_original_problem->get_c_dimension();
 		break;
 	}
@@ -249,7 +249,7 @@ void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vec
 	// updates the vectors depending on the method
 	switch(m_method)
 	{
-	case SIMPLE:
+	case algorithm::cstrs_co_evolution::SIMPLE:
 	{
 		sum_viol.resize(1);
 		num_viol.resize(1);
@@ -268,7 +268,7 @@ void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vec
 		}
 		break;
 	}
-	case SPLIT_NEQ_EQ:
+	case algorithm::cstrs_co_evolution::SPLIT_NEQ_EQ:
 	{
 		sum_viol.resize(2);
 		num_viol.resize(2);
@@ -295,7 +295,7 @@ void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vec
 		}
 		break;
 	}
-	case SPLIT_CONSTRAINTS:
+	case algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS:
 	{
 		sum_viol.resize(prob_c_dimension);
 		num_viol.resize(prob_c_dimension);
@@ -336,12 +336,12 @@ cstrs_co_evolution_2::cstrs_co_evolution_2(const base &problem, int dimension):
 		 0.),
 	m_original_problem(problem.clone()),
 	m_sub_pop_2_x_vector(std::vector<decision_vector>(0)),
-					   m_sub_pop_1_f_vector(std::vector< std::vector<double> >(0)),
-					   m_feasible_count_vector(std::vector<int>(0)),
-					   m_feasible_fitness_sum_vector(std::vector<double>(0)),
-					   m_max_feasible_fitness(0.),
-					   m_total_sum_viol(0.),
-					   m_total_num_viol(0)
+	m_sub_pop_1_f_vector(std::vector< std::vector<double> >(0)),
+	m_feasible_count_vector(std::vector<int>(0)),
+	m_feasible_fitness_sum_vector(std::vector<double>(0)),
+	m_max_feasible_fitness(0.),
+	m_total_sum_viol(0.),
+	m_total_num_viol(0)
 {
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
