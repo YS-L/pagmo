@@ -109,7 +109,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 	}
 
 	// Get out if there is nothing to do.
-	if (pop_size == 0) {
+	if(pop_size == 0) {
 		return;
 	}
 
@@ -208,6 +208,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 		}
 
 		// set up penalization variables needs for the population 2
+		// the constraints has not been evaluated yet.
 		prob_2.update_penalty_coeff(sub_pop_2_x, sub_pop_1_x_vector, sub_pop_1_f_vector);
 		population sub_pop_2(prob_2,0);
 

@@ -35,7 +35,7 @@ namespace pagmo { namespace problem {
 /**
  * Constructor of co-evolution problem using initial constrained problem
  *
- * Note: This problem is not inteded to be used by itself. Instead use the
+ * Note: This problem is not intended to be used by itself. Instead use the
  * co-evolution algorithm if you want to solve constrained problems.
  *
  * @param[in] problem base::problem to be modified to use a co-evolution
@@ -317,7 +317,6 @@ void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vec
 	}
 }
 
-
 /**
  * Constructor of co-evolution problem using initial constrained problem
  *
@@ -385,8 +384,7 @@ base_ptr cstrs_co_evolution_2::clone() const
 /// Implementation of the objective function.
 /// (Wraps over the original implementation)
 /**
- *  Returns the penalized fitness if the decision vector penalize with the penalty
- *  coefficient given.
+ *  Returns the averaged fitness penalized with feasabiltity informaitions.
  */
 void cstrs_co_evolution_2::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
@@ -406,8 +404,8 @@ void cstrs_co_evolution_2::objfun_impl(fitness_vector &f, const decision_vector 
 			f[0] = m_feasible_fitness_sum_vector[position] / double(m_feasible_count_vector[position]) - double(m_feasible_count_vector[position]);
 		} else {
 			f[0] = m_max_feasible_fitness +
-					m_total_sum_viol[position]/double(m_total_num_viol[position]) -
-					double(m_total_num_viol[position]);
+					m_total_sum_viol.at(position)/double(m_total_num_viol.at(position)) -
+					double(m_total_num_viol.at(position));
 		}
 	}
 	else {
@@ -461,25 +459,37 @@ void cstrs_co_evolution_2::update_penalty_coeff(const std::vector<decision_vecto
 	m_feasible_count_vector.resize(sub_pop_2_size);
 	m_feasible_fitness_sum_vector.resize(sub_pop_2_size);
 
+	m_total_sum_viol.resize(sub_pop_2_size);
+	m_total_num_viol.resize(sub_pop_2_size);
+
 	m_max_feasible_fitness = 0.;
-	// computes the average fitness for the full population
+	// computes the total sum_viol, num_viol...
 	for(population::size_type j=0; j<sub_pop_2_size; j++) {
 		const std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
 		const std::vector<fitness_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
+
+		m_total_sum_viol[j] = 0.;
+		m_total_num_viol[j] = 0;
 
 		// computes the number of feasible solutions and their sum for the current population
 		int feasible_count = 0;
 		double feasible_fitness_sum = 0.;
 
+		double sum_viol_temp = 0.;
+		int num_viol_temp = 0;
 		for(population::size_type i=0; i<sub_pop_1_size; i++) {
+
 			const decision_vector &current_x = sub_pop_1_x[i];
 			const fitness_vector &current_f = sub_pop_1_f[i];
 
-			if(m_original_problem->feasibility_x(current_x)) {
+			// computes the constraints / first time this is done
+			const decision_vector &current_c = m_original_problem->compute_constraints(current_x);
+
+			if(m_original_problem->feasibility_c(current_c)) {
 				feasible_count++;
 				feasible_fitness_sum += current_f[0];
 
-				// computes max feasible value
+				// computes max feasible fitness
 				if(i==0) {
 					m_max_feasible_fitness = current_f[0];
 				} else {
@@ -488,32 +498,13 @@ void cstrs_co_evolution_2::update_penalty_coeff(const std::vector<decision_vecto
 					}
 				}
 			}
-		}
-		m_feasible_count_vector[j] = feasible_count;
-		m_feasible_fitness_sum_vector[j] = feasible_fitness_sum;
-	}
 
-	m_total_sum_viol.resize(sub_pop_2_size);
-	m_total_num_viol.resize(sub_pop_2_size);
-
-	// computes the total sum_viol and num_viol
-	for(population::size_type j=0; j<sub_pop_2_size; j++) {
-		m_total_sum_viol[j] = 0.;
-		m_total_num_viol[j] = 0;
-
-		double sum_viol_temp;
-		int num_viol_temp;
-		for(population::size_type i=0; i<sub_pop_1_size; i++) {
-			const std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
-
-			// the compute penalty needs to be recomputed (we can't use
-			// the same for both pop1 and pop2 evolution)
-			// we really should consider a way to store violation information
-			// in the population as well :(
-			compute_penalty(sum_viol_temp,num_viol_temp,sub_pop_1_x[i]);
+			compute_penalty(sum_viol_temp,num_viol_temp,current_c);
 			m_total_sum_viol[j] += sum_viol_temp;
 			m_total_num_viol[j] += num_viol_temp;
 		}
+		m_feasible_count_vector[j] = feasible_count;
+		m_feasible_fitness_sum_vector[j] = feasible_fitness_sum;
 	}
 }
 
@@ -524,10 +515,9 @@ void cstrs_co_evolution_2::update_penalty_coeff(const std::vector<decision_vecto
  * @param[in,out] std::vector<double> num_viol number of violation vector.
  * @param[in] decision_vector x.
  */
-void cstrs_co_evolution_2::compute_penalty(double &sum_viol, int &num_viol, const decision_vector &x) const
+void cstrs_co_evolution_2::compute_penalty(double &sum_viol, int &num_viol, const constraint_vector &c) const
 {
 	// get the constraints dimension
-	constraint_vector c(m_original_problem->get_c_dimension(), 0.);
 	problem::base::c_size_type prob_c_dimension = m_original_problem->get_c_dimension();
 	problem::base::c_size_type number_of_eq_constraints =
 			m_original_problem->get_c_dimension() -
@@ -535,21 +525,14 @@ void cstrs_co_evolution_2::compute_penalty(double &sum_viol, int &num_viol, cons
 
 	const std::vector<double> &c_tol = m_original_problem->get_c_tol();
 
-	// updates the current constraint vector
-	m_original_problem->compute_constraints(c,x);
-
-	// sets the right definition of the constraints
-	for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
-		c[j] = std::abs(c.at(j)) - c_tol.at(j);
-	}
-	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-		c[j] = std::max(0.,c.at(j));
-	}
-
 	// update sum_num_viol
 	sum_viol = 0.;
-	for(problem::base::c_size_type j=0; j<prob_c_dimension; j++) {
-		sum_viol += c.at(j);
+	for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
+		sum_viol += std::max(0.,std::abs(c.at(j)) - c_tol.at(j));
+	}
+
+	for(problem::base::c_size_type j=number_of_eq_constraints; j<prob_c_dimension; j++) {
+		sum_viol += std::max(0.,c.at(j));
 	}
 
 	num_viol = 0;
@@ -559,7 +542,6 @@ void cstrs_co_evolution_2::compute_penalty(double &sum_viol, int &num_viol, cons
 		}
 	}
 }
-
 
 }}
 

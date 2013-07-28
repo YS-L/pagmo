@@ -40,7 +40,7 @@ namespace pagmo { namespace algorithm {
 /// Co-Evolution constraints handling meta-algorithm
 /**
  *
- * Co-Evolution Fitness constraints handling is a meta-algorithm that allow
+ * Co-Evolution constraints handling is a meta-algorithm that allow
  * to solve constrained optimization problems. The key idea of this constraint
  * handling technique is to use two different populations that evolves the one after the
  * other. The first one has an objective function penalized with constraints. The penalty

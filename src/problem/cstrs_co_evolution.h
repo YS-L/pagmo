@@ -77,7 +77,7 @@ protected:
 	bool compare_fitness_impl(const fitness_vector &, const fitness_vector &) const;
 
 private:
-	void compute_penalty(std::vector<double> &, std::vector<int> &, const decision_vector &) const;
+	void compute_penalty(std::vector<double> &, std::vector<int> &, const constraint_vector &) const;
 
 private:
 	friend class boost::serialization::access;
