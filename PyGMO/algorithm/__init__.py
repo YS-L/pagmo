@@ -568,11 +568,15 @@ def _monte_carlo_ctor(self, iter = 10000):
 monte_carlo._orig_init = monte_carlo.__init__
 monte_carlo.__init__ = _monte_carlo_ctor
 
-def _self_adaptive_ctor(self, algorithm = _algorithm.sga(), max_iter = 100):
+def _self_adaptive_ctor(self, algorithm = _algorithm.jde(), max_iter = 100):
 	"""
-	Constructs a Seld-Adaptive Fitness constraints handling Meta Algorithm
+	Constructs a Self-Adaptive Fitness constraints handling Meta Algorithm.
+
+	The key idea of this constraint handling technique is to represent the
+	constraint violation by a single infeasibility measure, and to adapt
+	dynamically the penalization of infeasible solutions.
 	
-	USAGE: algorithm.self_adaptive(algorithm = algorithm.sga(),population);
+	USAGE: algorithm.self_adaptive(algorithm = algorithm.jde(),max_iter  = 100);
 
 	* algorithm: original optimizer
 	* max_iter: stop-criteria (number of iterations)

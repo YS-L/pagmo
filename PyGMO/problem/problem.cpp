@@ -396,11 +396,6 @@ BOOST_PYTHON_MODULE(_problem) {
 	problem_wrapper<problem::death_penalty>("death_penalty","Constrained death penalty problem")
 		.def(init<optional<const problem::base &, problem::death_penalty::method_type> >());
 
-	// Self adaptive meta-problem
-	problem_wrapper<problem::self_adaptive>("self_adaptive","Constrained self adaptive problem")
-		.def(init<optional<const problem::base &, const population &> >())
-		.add_property("population", &problem::self_adaptive::update_penalty_coeff);
-
 	// Shifted meta-problem
 	problem_wrapper<problem::shifted>("shifted","Shifted problem")
 		.def(init<const problem::base &>())

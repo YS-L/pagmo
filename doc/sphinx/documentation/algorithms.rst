@@ -43,6 +43,7 @@ Multistart (MS)                    :class:`PyGMO.algorithm.ms`                  
 Penalty Function (PF)                                                                        Planned 
 Augmented Lagrangian (AL)          :class:`PyGMO.algorithm.nlopt_auglag`          C-C-S      Requires PyGMO to be compiled with nlopt option. Minimization assumed
 Augmented Lagrangian (AL)          :class:`PyGMO.algorithm.nlopt_auglag_eq`       C-C-S      Requires PyGMO to be compiled with nlopt option. Minimization assumed
+Self-Adaptive                      :class:`PyGMO.algorithm.self_adaptive`         C-C-S      Minimization assumed
 ================================== ========================================= =============== ===========================================
 
 Local optimization 
@@ -296,3 +297,6 @@ Detailed Documentation
 
       When True, the algorithms produces output on screen 
 
+.. autoclass:: PyGMO.algorithm.self_adaptive
+
+   .. automethod:: PyGMO.algorithm.self_adaptive.__init__

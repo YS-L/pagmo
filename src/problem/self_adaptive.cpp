@@ -74,6 +74,10 @@ self_adaptive::self_adaptive(const base &problem, const population &pop):
 		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with self adaptive meta problem.");
 	}
 
+	if(problem != pop.problem()) {
+		pagmo_throw(value_error,"The problem linked to the population is not the same as the problem given in argument.");
+	}
+
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
 	update_penalty_coeff(pop);
 }
@@ -453,7 +457,7 @@ void self_adaptive::update_c_scaling(const population &pop)
 	}
 }
 
-/// Computes the solution infeasibility measure for the full population,
+/// Computes the solution infeasibility measure for the given constraint,
 /// need the constraints scaling to be updated before calling this method.
 /**
  * Updates the solution infeasibility vector with the population given.

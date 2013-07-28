@@ -61,7 +61,7 @@ class __PAGMO_VISIBLE self_adaptive : public base
 {
 public:
 	//constructors
-	self_adaptive(const base & = cec2006(4), const population &pop = population(cec2006(4)));
+	self_adaptive(const base & = cec2006(4), const population & = population(cec2006(4)));
 
 	//copy constructor
 	self_adaptive(const self_adaptive &);
