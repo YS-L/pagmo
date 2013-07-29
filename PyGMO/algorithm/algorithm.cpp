@@ -121,6 +121,20 @@ inline class_<algorithm::mbh,bases<algorithm::base> > algorithm_wrapper(const ch
 	return retval;
 }
 
+template <>
+inline class_<algorithm::self_adaptive,bases<algorithm::base> > algorithm_wrapper(const char *name, const char *descr)
+{
+	class_<algorithm::self_adaptive,bases<algorithm::base> > retval(name,descr,init<const algorithm::self_adaptive &>());
+	retval.def(init<>());
+	retval.def("__copy__", &Py_copy_from_ctor<algorithm::self_adaptive>);
+	retval.def("__deepcopy__", &Py_deepcopy_from_ctor<algorithm::self_adaptive>);
+	retval.def("evolve", &evolve_copy);
+	retval.def_pickle(meta_algorithm_pickle_suite<algorithm::self_adaptive>());
+	retval.def("cpp_loads", &py_cpp_loads<algorithm::self_adaptive>);
+	retval.def("cpp_dumps", &py_cpp_dumps<algorithm::self_adaptive>);
+	return retval;
+}
+
 BOOST_PYTHON_MODULE(_algorithm) {
 	common_module_init();
 
@@ -201,7 +215,12 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	algorithm_wrapper<algorithm::ms>("ms","Multistart.")
 		.def(init<const algorithm::base &, int>())
 		.add_property("algorithm",&algorithm::ms::get_algorithm,&algorithm::ms::set_algorithm);
-	
+
+	// Self-Adaptive meta-algorithm.
+	algorithm_wrapper<algorithm::self_adaptive>("self_adaptive","Self adaptive constraints handling meta-algorithm.")
+		.def(init<optional<const algorithm::base &, const int> >())
+		.add_property("algorithm",&algorithm::self_adaptive::get_algorithm,&algorithm::self_adaptive::set_algorithm);
+
 	// Particle Swarm Optimization (Steady state)
 	algorithm_wrapper<algorithm::pso>("pso", "Particle Swarm Optimization (steady-state)")
 		.def(init<optional<int,double, double, double, double, int, int, int> >());
@@ -243,10 +262,6 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	// Simulated annealing, Corana's version.
 	algorithm_wrapper<algorithm::sa_corana>("sa_corana","Simulated annealing, Corana's version with adaptive neighbourhood.")
 		.def(init<optional<int, const double &, const double &, int,int,const double &> >());
-		
-	// Self-Adaptive meta-algorithm.
-	algorithm_wrapper<algorithm::self_adaptive>("self_adaptive","Self adaptive constraints handling meta-algorithm.")
-		.def(init<optional<const algorithm::base &, const int> >());
 
 	// GSL algorithms.
 	#ifdef PAGMO_ENABLE_GSL

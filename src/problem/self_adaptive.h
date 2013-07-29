@@ -51,7 +51,7 @@ namespace pagmo{ namespace problem {
  * process depends on a given population, this implementation is valid for
  * the provided population only.
  *
- * @see R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
+ * @see Farmani R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
  * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.
  *
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
@@ -61,7 +61,8 @@ class __PAGMO_VISIBLE self_adaptive : public base
 {
 public:
 	//constructors
-	self_adaptive(const base & = cec2006(4), const population & = population(cec2006(4)));
+	self_adaptive(const base & = cec2006(4));
+	self_adaptive(const base &, const population &);
 
 	//copy constructor
 	self_adaptive(const self_adaptive &);

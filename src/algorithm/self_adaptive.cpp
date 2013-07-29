@@ -92,7 +92,7 @@ void self_adaptive::evolve(population &pop) const
 
 	// Main Self-Adaptive loop
 	for(int k=0; k<m_gen; k++) {
-		std::cout << "current generation: " << k << std::endl;
+		//std::cout << "current generation: " << k << std::endl;
 
 		// at the first iteration the problem is not changed, 
 		// for k>0 the problem is gonna change, the cache need to be reset and the population cleared
@@ -134,7 +134,7 @@ void self_adaptive::evolve(population &pop) const
 			pop.push_back(pop_new.get_individual(i).cur_x);
 		}
 
-		std::cout << pop.champion() << std::endl;
+		//std::cout << pop.champion() << std::endl;
 	}
 }
 

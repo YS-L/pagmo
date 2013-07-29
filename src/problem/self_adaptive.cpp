@@ -54,10 +54,10 @@ self_adaptive::self_adaptive(const base &problem, const population &pop):
 	m_original_problem(problem.clone()),
 	m_apply_penalty_1(false),
 	m_scaling_factor(0.0),
-	m_c_scaling(0),
-	m_f_hat_down(0),
-	m_f_hat_up(0),
-	m_f_hat_round(0),
+	m_c_scaling(problem.get_c_dimension(),0.0),
+	m_f_hat_down(problem.get_f_dimension(),0.0),
+	m_f_hat_up(problem.get_f_dimension(),0.0),
+	m_f_hat_round(problem.get_f_dimension(),0.0),
 	m_i_hat_down(0.0),
 	m_i_hat_up(0.0),
 	m_i_hat_round(0.0),
@@ -76,6 +76,42 @@ self_adaptive::self_adaptive(const base &problem, const population &pop):
 
 	if(problem != pop.problem()) {
 		pagmo_throw(value_error,"The problem linked to the population is not the same as the problem given in argument.");
+	}
+
+	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
+	update_penalty_coeff(pop);
+}
+
+self_adaptive::self_adaptive(const base &problem):
+	base((int)problem.get_dimension(),
+		 problem.get_i_dimension(),
+		 problem.get_f_dimension(),
+		 0,
+		 0,
+		 0.),
+	m_original_problem(problem.clone()),
+	m_apply_penalty_1(false),
+	m_scaling_factor(0.0),
+	m_c_scaling(problem.get_c_dimension(),0.0),
+	m_f_hat_down(problem.get_f_dimension(),0.0),
+	m_f_hat_up(problem.get_f_dimension(),0.0),
+	m_f_hat_round(problem.get_f_dimension(),0.0),
+	m_i_hat_down(0.0),
+	m_i_hat_up(0.0),
+	m_i_hat_round(0.0),
+	m_decision_vector_hash(),
+	m_map_fitness(),
+	m_map_constraint()
+{
+	population pop(*m_original_problem,0);
+	
+	if(m_original_problem->get_c_dimension() <= 0){
+		pagmo_throw(value_error,"The original problem has no constraints.");
+	}
+
+	// check that the dimension of the problem is 1
+	if (m_original_problem->get_f_dimension() != 1) {
+		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with self adaptive meta problem.");
 	}
 
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
@@ -195,6 +231,10 @@ std::string self_adaptive::get_name() const
  */
 void self_adaptive::update_penalty_coeff(const population &pop)
 {
+	if(*m_original_problem != pop.problem()) {
+		pagmo_throw(value_error,"The problem linked to the population is not the same as the problem given in argument.");
+	}
+
 	// Let's store some useful variables.
 	const population::size_type pop_size = pop.size();
 
@@ -349,7 +389,6 @@ void self_adaptive::update_penalty_coeff(const population &pop)
 		hat_down_idx = 0;
 		hat_up_idx = 0;
 
-		// case of equality? what do we do?
 		for(population::size_type i=0; i<pop_size; i++) {
 			const population::individual_type &current_individual = pop.get_individual(i);
 
@@ -424,6 +463,10 @@ void self_adaptive::update_penalty_coeff(const population &pop)
  */
 void self_adaptive::update_c_scaling(const population &pop)
 {
+	if(*m_original_problem != pop.problem()) {
+		pagmo_throw(value_error,"The problem linked to the population is not the same as the problem given in argument.");
+	}
+
 	// Let's store some useful variables.
 	const population::size_type pop_size = pop.size();
 
