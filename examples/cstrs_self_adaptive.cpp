@@ -132,6 +132,9 @@ algorithm::base_ptr get_constrained_algo(algorithm::base_ptr algo, int i) {
 	case(2):
 		return algorithm::self_adaptive(*algo, 20000).clone();
 		break;
+	default:
+		return algo;
+		break;
 	}
 }
 
