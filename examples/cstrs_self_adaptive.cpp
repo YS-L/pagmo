@@ -124,7 +124,7 @@ problem::base_ptr get_constrained_prob(problem::base_ptr prob, int i) {
 algorithm::base_ptr get_constrained_algo(algorithm::base_ptr algo, int i) {
 	switch(i) {
 	case(0):
-		return algorithm::self_adaptive(*algo, 30).clone();
+		return algorithm::self_adaptive(*algo, 100).clone();
 		break;
 	case(1):
 		return algorithm::self_adaptive(*algo, 5000).clone();
