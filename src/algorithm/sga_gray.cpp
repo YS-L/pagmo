@@ -491,7 +491,7 @@ std::string sga_gray::human_readable_extra() const
 	return s.str();
 }
 
-std::vector<int> sga_gray::selection(const std::vector<decision_vector> &pop_x, const std::vector<fitness_vector> &pop_f, const problem::base &prob) const
+std::vector<int> sga_gray::selection(const std::vector<fitness_vector> &pop_f, const problem::base &prob) const
 {
 	int method = 1;
 
