@@ -278,9 +278,17 @@ void sga_gray::evolve(population &pop) const
 			Xnew[i]=X[selection[i]];
 		}
 
-		// encode the selected generation of chromosomes
 
+//		std::vector<int> dummy(Xnew.at(0).size() * m_bit_encoding, 0);
+//		std::vector< std::vector<int> > encoded_decision_vector(Xnew.size(),dummy);
 
+//		for(std::vector::size_type i=0; i<Xnew.size(); i++) {
+//			decision_vector &current_x = Xnew.at(i);
+//			encoded_decision_vector[i] = encode(current_x, lb, ub);
+//		}
+
+//		// encode Xnew
+//		encode(Xnew);
 
 		//2 - Crossover
 		{
@@ -365,6 +373,9 @@ void sga_gray::evolve(population &pop) const
 			break;
 		}
 		}
+
+		// decode
+		decode(Xnew);
 
 		// If the problem is a stochastic optimization chage the seed and re-evaluate taking care to update also best and local bests
 		try
@@ -480,25 +491,204 @@ std::string sga_gray::human_readable_extra() const
 	return s.str();
 }
 
+std::vector<int> sga_gray::selection(const std::vector<decision_vector> &pop_x, const std::vector<fitness_vector> &pop_f, const problem::base &prob) const
+{
+	int method = 1;
 
-//// Convert 32-bit gray encoding into the decimal equivalent
-//float Population::GetFloat32_Gray( std::string Binary )
-//{
-//	// Get sign bit
-//	int sign = Binary.at( 0 ) == '0' ? 1 : -1;
+	population::size_type NP = pop_f.size();
 
-//	// Get remaining string
-//	std::string rem = Binary.substr( 1 );
-//	std::string bin = Gray2Bin( rem );
+	std::vector<int> selection(NP);
 
-//	long bin_val = Bin2Dec( bin );
+	switch (method) {
+	case 0: {
+		//selects the best 20% and puts multiple copies in Xnew
+		// in practice, for performance reasons, the selection, fitnessID should not be created each time
+		// thus we might prefer to use a class of operators
+		int tempID;
+		std::vector<int> fitnessID(NP);
 
-//	float val = (float) bin_val / (float) divisor_31;
+		for (population::size_type i=0; i<NP; i++) {
+			fitnessID[i]=i;
+		}
+		for (population::size_type i=0; i < (NP-1); ++i) {
+			for (population::size_type j=i+1; j<NP; ++j) {
+				//if ( prob.compare_fitness(pop_f[fitnessID[j]],pop_f[fitnessID[i]]) ) {
+				if ( pop_f[fitnessID[j]]<pop_f[fitnessID[i]]) {
+					//swap fitness values
+					// fit[i].swap(fit[j]);
+					//swap id's
+					tempID = fitnessID[i];
+					fitnessID[i] = fitnessID[j];
+					fitnessID[j] = tempID;
+				}
+			}
+		}
 
-//	val *= sign;
+		// fitnessID now contains the position of individuals ranked from best to worst
+		int best20 = NP/5;
+		for (pagmo::population::size_type i=0; i<NP; ++i) {
+			selection[i] = fitnessID[i % best20]; // multiple copies
+		}
+		break;
+	}
+	case 1: { // ROULETTE
+		std::vector<double> selectionfitness(NP), cumsum(NP), cumsumTemp(NP);
 
-//	return val;
-//}
+		//We scale all fitness values from 0 (worst) to absolute value of the best fitness
+		fitness_vector worstfit=pop_f[0];
+		for (population::size_type i = 1; i < NP;i++) {
+			//if (prob.compare_fitness(worstfit,pop_f[i])) worstfit=pop_f[i];
+			if (worstfit<pop_f[i]) worstfit=pop_f[i];
+		}
+
+		for (population::size_type i = 0; i < NP; i++) {
+			selectionfitness[i] = fabs(worstfit[0] - pop_f[i][0]);
+		}
+
+		// We build and normalise the cumulative sum
+		cumsumTemp[0] = selectionfitness[0];
+		for (population::size_type i = 1; i< NP; i++) {
+			cumsumTemp[i] = cumsumTemp[i - 1] + selectionfitness[i];
+		}
+		for (population::size_type i = 0; i < NP; i++) {
+			cumsum[i] = cumsumTemp[i]/cumsumTemp[NP-1];
+		}
+
+		//we throw a dice and pick up the corresponding index
+		double r2;
+		for (population::size_type i = 0; i < NP; i++) {
+			r2 = m_drng();
+			for (population::size_type j = 0; j < NP; j++) {
+				if (cumsum[j] > r2) {
+					selection[i]=j;
+					break;
+				}
+			}
+		}
+		break;
+		}
+	}
+	return selection;
+}
+
+void sga_gray::crossover(std::vector<decision_vector> &pop_x) const
+{
+	int cross_method=0;
+
+	// crossover probability
+	const double crossover_rate = 0.8;
+
+	population::size_type NP = pop_x.size();
+	fitness_vector::size_type D = pop_x.at(0).size();
+
+	int r1,L;
+	decision_vector  member1,member2;
+
+	for (population::size_type i=0; i<NP; i++) {
+		//for each chromosome selected i.e. in pop_x
+		member1 = pop_x[i];
+
+		//we select a mating patner different from the self (i.e. no masturbation)
+		do {
+			r1 = boost::uniform_int<int>(0,NP - 1)(m_urng);
+		} while ( r1 == boost::numeric_cast<int>(i) );
+		member2 = pop_x[r1];
+
+		// and we operate crossover
+		switch (cross_method) {
+		//0 - binomial crossover
+		case 0: {
+			size_t n = boost::uniform_int<int>(0,D-1)(m_urng);
+			for (size_t L = 0; L < D; ++L) { /* perform D binomial trials */
+				if ((m_drng() < crossover_rate) || L + 1 == D) { /* change at least one parameter */
+					member1[n] = member2[n];
+				}
+				n = (n+1)%D;
+			}
+			break;
+		}
+		// 1 - exponential crossover
+		case 1: {
+			size_t n = boost::uniform_int<int>(0,D-1)(m_urng);
+			L = 0;
+			do {
+				member1[n] = member2[n];
+				n = (n+1) % D;
+				L++;
+			}  while ( (m_drng() < crossover_rate) && (L < boost::numeric_cast<int>(D)) );
+			break;
+		}
+		}
+		pop_x[i] = member1;
+	}
+}
+
+void sga_gray::mutate(std::vector<decision_vector> &pop_x, const problem::base &prob) const
+{
+	int method=0;
+
+	double width=0.1;
+	double mutation_rate = 0.02;
+
+	const problem::base::size_type D = pop_x.at(0).size();
+
+	const problem::base::size_type Di = 0.;
+	const double lb[] = {1.,1000};
+	const double ub[] = {1.,1000};
+
+	const problem::base::size_type Dc = D - Di;
+
+	const population::size_type NP = pop_x.size();
+
+//	const problem::base::size_type Di = prob.get_i_dimension();
+//	const decision_vector &lb = prob.get_lb(), &ub = prob.get_ub();
+//	const population::size_type NP = pop_x.size();
+//	const problem::base::size_type Dc = D - Di;
+
+	switch (method) {
+	case 0: { // GAUSSIAN
+		boost::normal_distribution<double> dist;
+		boost::variate_generator<boost::lagged_fibonacci607 &, boost::normal_distribution<double> > delta(m_drng,dist);
+		for (problem::base::size_type k = 0; k < Dc;k++) { //for each continuous variable
+			double std = (ub[k]-lb[k]) * width;
+			for (pagmo::population::size_type i = 0; i < NP;i++) { //for each individual
+				if (m_drng() < mutation_rate) {
+					double mean = pop_x[i][k];
+					double tmp = (delta() * std + mean);
+					if ( (tmp < ub[k]) &&  (tmp > lb[k]) ) pop_x[i][k] = tmp;
+				}
+			}
+		}
+		for (problem::base::size_type k = Dc; k < D;k++) { //for each integer variable
+			double std = (ub[k]-lb[k]) * width;
+			for (pagmo::population::size_type i = 0; i < NP;i++) { //for each individual
+				if (m_drng() < mutation_rate) {
+					double mean = pop_x[i][k];
+					double tmp = boost::math::iround(delta() * std + mean);
+					if ( (tmp < ub[k]) &&  (tmp > lb[k]) ) pop_x[i][k] = tmp;
+				}
+			}
+		}
+		break;
+		}
+	case 1: { // RANDOM
+		for (population::size_type i = 0; i < NP;i++) {
+			for (pagmo::problem::base::size_type j = 0; j < Dc;j++) { //for each continuous variable
+				if (m_drng() < mutation_rate) {
+					pop_x[i][j] = boost::uniform_real<double>(lb[j],ub[j])(m_drng);
+				}
+			}
+			for (problem::base::size_type j = Dc; j < D;j++) {//for each integer variable
+				if (m_drng() < mutation_rate) {
+					pop_x[i][j] = boost::uniform_int<int>(lb[j],ub[j])(m_urng);
+				}
+			}
+		}
+		break;
+		}
+	}
+}
+
 
 
 std::vector<int> sga_gray::double_to_binary(const double &number, const double &lb, const double &ub) const
@@ -571,6 +761,26 @@ std::vector<int> sga_gray::binary_to_gray(const std::vector<int> &binary) const
 
 	return gray;
 }
+
+std::vector<int> sga_gray::encode_decision(const decision_vector &x, const decision_vector &lb, const decision_vector &ub) const
+{
+	std::vector<int> encoded_x(x.size() * m_bit_encoding, 0);
+
+	for(decision_vector::size_type i=0; i<x.size(); i++) {
+		std::vector<int> encoded_gene = binary_to_gray(double_to_binary(x.at(i),lb.at(i),ub.at(i)));
+		// copy the gene at the right location
+		for(decision_vector::size_type j=0; j<m_bit_encoding; j++) {
+			encoded_x[i*m_bit_encoding + j] = encoded_gene[j];
+		}
+	}
+
+	return encoded_x;
+}
+void sga_gray::decode(std::vector<decision_vector> &x_vector) const
+{
+
+}
+
 
 }} //namespaces
 

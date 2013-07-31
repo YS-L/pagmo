@@ -130,13 +130,22 @@ private:
 	//Crossover_type
 	const crossover::type m_cro;
 
+private:
+	// genetic algoritms operators
+	std::vector<int> selection(const std::vector<fitness_vector> &, const problem::base &) const;
+	void crossover(std::vector<decision_vector> &pop_x) const;
+	void mutate(std::vector<decision_vector> &pop_x, const problem::base &prob) const;
 
 private:
 	std::vector<int> double_to_binary(const double &number, const double &lb, const double &ub) const;
 	double binary_to_double(const std::vector<int> &binary, const double &lb, const double &ub) const;
 	std::vector<int> gray_to_binary(const std::vector<int> &gray) const;
 	std::vector<int> binary_to_gray(const std::vector<int> &binary) const;
-	// encoding
+
+	// encoding/decoding
+	std::vector<int> encode_decision(const decision_vector &x_vector, const decision_vector &lb, const decision_vector &ub) const;
+	void decode(std::vector<decision_vector> &x_vector) const;
+
 	int m_max_encoding_integer;
 	int m_bit_encoding;
 };
