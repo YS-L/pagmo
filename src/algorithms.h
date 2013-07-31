@@ -42,6 +42,7 @@
 #include "algorithm/pso_generational.h"
 #include "algorithm/sa_corana.h"
 #include "algorithm/sga.h"
+#include "algorithm/sga_gray.h"
 #include "algorithm/nsga2.h"
 #include "algorithm/bee_colony.h"
 #include "algorithm/firefly.h"
