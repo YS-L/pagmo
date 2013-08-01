@@ -34,20 +34,17 @@ namespace pagmo { namespace algorithm {
 
 /// The Simple Genetic Algorithm with gray encoding (sga_gray)
 /**
- * sga_gray_gray algorithms are very popular algorithms used widely by people of very different backgrounds.
- * As a consequence there are a large number of different implementations and toolboxes that are available
- * and can be used to construct a sga_gray_gray algorithm. We decided not to choose one of these and, instead, to
- * provide only a basic implementation of the algorithm implementing a floating point encoding (not binary)
- * and some common mutation and crossover strategies, hence the name Simple sga_gray_gray Algorithm.
+ * Simple Genetic algorithms are very popular algorithms used widely by people of very
+ * different backgrounds.
+ * Contrary to PAGMO::SGA, this implementation uses a binary encoding and some common
+ * mutation and crossover strategies.
  *
- * Mutation is gaussian or random, crossover exponential or binomial and selection is tournament or
- * best20 (i.e. 20% best of the population is selcted and reproduced 5 times).
+ * Mutation is random, crossover uniform and selection is roulette or
+ * best20 (i.e. 20% best of the population is selected and reproduced 5 times).
  *
- * The algorithm works on single objective, box constrained problems. The mutation operator acts
- * differently on continuous and discrete variables.
+ * The algorithm works on single objective, box constrained problems.
  *
- * @author Dario Izzo (dario.izzo@googlemail.com)
- *
+ * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */
 
 class __PAGMO_VISIBLE sga_gray: public base
@@ -60,39 +57,19 @@ public:
 	};
 	/// Mutation operator info
 	struct mutation {
-		/// Mutation type, gaussian or random
-		enum type {GAUSSIAN = 0, RANDOM = 1};
-		/// Constructor
-		/**
-			* \param[in] t the mutation type
-			* \param[in] width the width of the gaussian bell in case of a gaussian mutation. The
-			*		parameter is otherwise ignored. width is a percentage with respect to the
-			*		ub[i]-lb[i] width.
-			*/
-		mutation(mutation::type t, double width) : m_type(t),m_width(width) {}
-		/// Mutation type
-		type m_type;
-		/// Mutation width
-		double m_width;
-	private:
-		friend class boost::serialization::access;
-		template <class Archive>
-		void serialize(Archive &ar, const unsigned int)
-		{
-			ar & m_type;
-			ar & m_width;
-		}
+		/// Mutation type, uniform
+		enum type {UNIFORM = 0};
 	};
 
 	/// Crossover operator info
 	struct crossover {
-		/// Crossover type, binomial or exponential
-		enum type {BINOMIAL = 0, EXPONENTIAL = 1};
+		/// Crossover type, single point
+		enum type {SINGLE_POINT = 0};
 	};
 	sga_gray(int gen  = 1, const double &cr = .95, const double &m = .02, int elitism = 1,
-			 mutation::type mut  = mutation::GAUSSIAN, double width = 0.1,
+			 mutation::type mut  = mutation::UNIFORM,
 			 selection::type sel = selection::ROULETTE,
-			 crossover::type cro = crossover::EXPONENTIAL);
+			 crossover::type cro = crossover::SINGLE_POINT);
 	base_ptr clone() const;
 	void evolve(population &) const;
 	std::string get_name() const;
@@ -108,7 +85,7 @@ private:
 		ar & const_cast<double &>(m_cr);
 		ar & const_cast<double &>(m_m);
 		ar & const_cast<int &>(m_elitism);
-		ar & const_cast<mutation &>(m_mut);
+		ar & const_cast<mutation::type &>(m_mut);
 		ar & const_cast<selection::type &>(m_sel);
 		ar & const_cast<crossover::type &>(m_cro);
 		ar & m_max_encoding_integer;
@@ -124,7 +101,7 @@ private:
 	//Elitism (number of generations after which to reinsert the best)
 	const int m_elitism;
 	//Mutation
-	const mutation m_mut;
+	const mutation::type m_mut;
 	//Selection_type
 	const selection::type m_sel;
 	//Crossover_type
@@ -133,19 +110,21 @@ private:
 private:
 	// genetic algoritms operators
 	std::vector<int> selection(const std::vector<fitness_vector> &, const problem::base &) const;
-	void crossover(std::vector<decision_vector> &pop_x) const;
-	void mutate(std::vector<decision_vector> &pop_x, const problem::base &prob) const;
+	void crossover(std::vector< std::vector<int> > &pop_x) const;
+	void mutate(std::vector< std::vector<int> > &pop_x) const;
 
 private:
+	// binary conversion
 	std::vector<int> double_to_binary(const double &number, const double &lb, const double &ub) const;
 	double binary_to_double(const std::vector<int> &binary, const double &lb, const double &ub) const;
 	std::vector<int> gray_to_binary(const std::vector<int> &gray) const;
 	std::vector<int> binary_to_gray(const std::vector<int> &binary) const;
 
 	// encoding/decoding
-	std::vector<int> encode_decision(const decision_vector &x_vector, const decision_vector &lb, const decision_vector &ub) const;
-	void decode(std::vector<decision_vector> &x_vector) const;
+	std::vector<int> encode(const decision_vector &x_vector, const decision_vector &lb, const decision_vector &ub) const;
+	decision_vector decode(const std::vector<int> &chrom, const decision_vector &lb, const decision_vector &ub) const;
 
+	// encoding size
 	int m_max_encoding_integer;
 	int m_bit_encoding;
 };
@@ -154,4 +133,4 @@ private:
 
 BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::sga_gray);
 
-#endif // PAGMO_ALGORITHM_sga_gray_H
+#endif // PAGMO_ALGORITHM_SGA_GRAY_H
