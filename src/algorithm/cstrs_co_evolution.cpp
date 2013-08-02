@@ -44,8 +44,9 @@ namespace pagmo { namespace algorithm {
  * Constructs a co-evolution adaptive algorithm
  *
  * @param[in] original_algo pagmo::algorithm to use as 'original' optimization method
- * @param[in] original_algo_2 pagmo::algorithm to use as 'original' optimization method for population 2
- * @param[in] pop_2_size population size for the penalty encoding population.
+ * @param[in] original_algo_penalties pagmo::algorithm to use as 'original' optimization method 
+ * for population representing the penaltiesweights
+ * @param[in] pop_penalties_size population size for the penalty encoding population.
  * @param[in] gen number of generations.
  * @param[in] problem::cstrs_co_evolution::method_type the method used for the population 2.
  * Three posssibililties are available: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
@@ -58,27 +59,30 @@ namespace pagmo { namespace algorithm {
  * @param[in] pen_upper_bound the upper boundary used for penalty.
  * @throws value_error if stop is negative
  */
-cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, const base &original_algo_2, int pop_2_size,
+cstrs_co_evolution::cstrs_co_evolution(const base &original_algo, const base &original_algo_penalties, int pop_penalties_size,
 									   int gen,method_type method, double pen_lower_bound,
 									   double pen_upper_bound):
-	base(),m_gen(gen),m_pop_2_size(pop_2_size),m_method(method),
+	base(),m_gen(gen),m_pop_penalties_size(pop_penalties_size),m_method(method),
 	m_pen_lower_bound(pen_lower_bound),m_pen_upper_bound(pen_upper_bound)
 {
 	m_original_algo = original_algo.clone();
-	m_original_algo_2 = original_algo_2.clone();
+	m_original_algo_penalties = original_algo_penalties.clone();
 	if(gen < 0) {
 		pagmo_throw(value_error,"number of generations must be nonnegative");
 	}
-	if(pop_2_size <= 0) {
-		pagmo_throw(value_error,"the population of the population 2 be greater than 0");
+	if(pop_penalties_size <= 0) {
+		pagmo_throw(value_error,"the population size of the penalty weights must be greater than 0");
+	}
+	if(pen_lower_bound>=pen_upper_bound){
+		pagmo_throw(value_error,"Lower Bound of penalty coefficients must be smaller than Upper Bound");
 	}
 }
 
 /// Copy constructor.
 cstrs_co_evolution::cstrs_co_evolution(const cstrs_co_evolution &algo):
 	base(algo),m_original_algo(algo.m_original_algo->clone()),
-	m_original_algo_2(algo.m_original_algo_2->clone()),m_gen(algo.m_gen),
-	m_pop_2_size(algo.m_pop_2_size),m_method(algo.m_method),
+	m_original_algo_penalties(algo.m_original_algo_penalties->clone()),m_gen(algo.m_gen),
+	m_pop_penalties_size(algo.m_pop_penalties_size),m_method(algo.m_method),
 	m_pen_lower_bound(algo.m_pen_lower_bound),m_pen_upper_bound(algo.m_pen_upper_bound)
 {}
 
@@ -107,137 +111,132 @@ void cstrs_co_evolution::evolve(population &pop) const
 	if(prob_c_dimension < 1) {
 		pagmo_throw(value_error,"The problem is not constrained and co-evolution is not suitable to solve it");
 	}
+	if(prob.get_f_dimension() != 1) {
+		pagmo_throw(value_error,"The problem is multiobjective and co-evolution is not suitable to solve it");
+	}
 
 	// Get out if there is nothing to do.
 	if(pop_size == 0) {
 		return;
 	}
 
+	//get the dimension of the chromosome of P2
+	int pop_2_dim = 0;
+	switch(m_method)
+	{
+	case algorithm::cstrs_co_evolution::SIMPLE:
+	{
+		pop_2_dim = 2;
+		break;
+	}
+	case algorithm::cstrs_co_evolution::SPLIT_NEQ_EQ:
+	{
+		pop_2_dim = 4;
+		break;
+	}
+	case algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS:
+		pop_2_dim = 2*prob.get_c_dimension();
+		break;
+	default: 
+		pagmo_throw(value_error,"The constraints co-evolutionary method is not valid.");
+		break;
+	}
+
 	// split the population into two populations
 	// the population P1 associated to the modified problem with penalized fitness
-	// the reason P2 is not a population type is that only one iteration of prob2
-	// is necessary and it is not easy to locally update the fitness
+	// and population P2 encoding the penalty weights
+	
+	// Populations size
+	population::size_type pop_1_size = pop_size;
+	population::size_type pop_2_size = m_pop_penalties_size;
 
-	// creates the problem 1 and 2
-	problem::cstrs_co_evolution prob_1(prob, m_method);
-	problem::cstrs_co_evolution_2 prob_2(prob, prob_1.get_expected_penalty_coeff_size());
+	//Creates problem associated to P2
+	problem::cstrs_co_evolution_penalty prob_2(prob,pop_2_dim,pop_2_size);
+	prob_2.set_bounds(m_pen_lower_bound,m_pen_upper_bound);
 
-	// sub population size
-	population::size_type sub_pop_1_size = pop_size;
-	population::size_type sub_pop_2_size = m_pop_2_size;
+	//random initialization of the P2 chromosome (needed for the fist generation)
+	std::vector<decision_vector> pop_2_x(pop_2_size);
+	std::vector<fitness_vector> pop_2_f(pop_2_size);
 
-	// set up the structure for the population 1 and 2
-	std::vector< std::vector<decision_vector> > sub_pop_1_x_vector(sub_pop_2_size);
-	std::vector< std::vector<fitness_vector> > sub_pop_1_f_vector(sub_pop_2_size);
-
-	for(population::size_type i=0; i<sub_pop_2_size; i++) {
-		sub_pop_1_x_vector[i] = std::vector<decision_vector>(sub_pop_1_size);
-		sub_pop_1_f_vector[i] = std::vector<fitness_vector>(sub_pop_1_size);
-	}
-
-	// initialize sub_pop_1 vectors
-	for(population::size_type j=0; j<sub_pop_2_size; j++) {
-		std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
-		std::vector<fitness_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
-
-		for(population::size_type i=0; i<sub_pop_1_size; i++) {
-			sub_pop_1_x[i] = pop.get_individual(i).cur_x;
-			sub_pop_1_f[i] = pop.get_individual(i).cur_f;
-		}
-	}
-
-	std::vector<decision_vector> sub_pop_2_x(sub_pop_2_size);
-	std::vector<fitness_vector> sub_pop_2_f(sub_pop_2_size);
-
-	// population 2 problem related variables
-	// decision vector is depends on the method we use for 1
-	int pop_2_x_dimension = prob_1.get_expected_penalty_coeff_size();
-
-	decision_vector lb(pop_2_x_dimension);
-	decision_vector ub(pop_2_x_dimension);
-
-	std::fill(lb.begin(),lb.end(),m_pen_lower_bound);
-	std::fill(ub.begin(),ub.end(),m_pen_upper_bound);
-
-	prob_2.set_bounds(lb,ub);
-
-	// population 2 initialization
-	// might be done with the problem_2 definition, but didn't want to create a
-	// sub_pop_2 here...
-	for(population::size_type j=0; j<sub_pop_2_size; j++) {
-		sub_pop_2_x[j] = decision_vector(pop_2_x_dimension,0.);
-
+	for(population::size_type j=0; j<pop_2_size; j++) {
+		pop_2_x[j] = decision_vector(pop_2_dim,0.);
 		// choose random coefficients between lower bound and upper bound
-		for(population::size_type i=0; i<pop_2_x_dimension;i++) {
-			sub_pop_2_x[j][i] = boost::uniform_real<double>(lb[i],ub[i])(m_drng);
+		for(population::size_type i=0; i<pop_2_dim;i++) {
+			pop_2_x[j][i] = boost::uniform_real<double>(m_pen_lower_bound,m_pen_upper_bound)(m_drng);
 		}
-		sub_pop_2_f[j] = fitness_vector(1);
+	}
+
+	//vector of the population P1. Initialized with clones of the original population
+	std::vector<population> pop_1_vector;
+	for(population::size_type i=0; i<pop_2_size; i++){
+		pop_1_vector.push_back(population(pop));
 	}
 
 	// Main Co-Evolution loop
 	for(int k=0; k<m_gen; k++) {
 		// for each individuals of pop 2, evolve the current population,
 		// and store the position of the feasible idx
-		for(population::size_type j=0; j<sub_pop_2_size; j++) {
+		for(population::size_type j=0; j<pop_2_size; j++) {
 
-			std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
-			std::vector<fitness_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
+			problem::cstrs_co_evolution prob_1(prob, pop_1_vector.at(j), m_method);
 
-			// modify the problem by settin decision vector encoding penalty
+			// modify the problem by setting decision vector encoding penalty
 			// coefficients w1 and w2 in prob 1
+			prob_1.set_penalty_coeff(pop_2_x.at(j));
 
-			prob_1.set_penalty_coeff(sub_pop_2_x.at(j));
-
-			// creating the subpopulation pop 1 instance based on the
+			// creating the POPULATION 1 instance based on the
 			// updated prob 1
-			population sub_pop_1_instance(prob_1,0);
+			population pop_1(prob_1,0);
 
-			// initialize the instance with pop_1 chromosomes
-			for(population::size_type i=0; i<sub_pop_1_size; i++) {
-				sub_pop_1_instance.push_back(sub_pop_1_x[i]);
+			// initialize P1 chromosomes. The fitnesses related to problem 1 are computed
+			for(population::size_type i=0; i<pop_1_size; i++) {
+				pop_1.push_back(pop.get_individual(i).cur_x);
 			}
 
-			// evolve the population 1 instance
-			m_original_algo->evolve(sub_pop_1_instance);
+			// evolve the P1 instance
+			m_original_algo->evolve(pop_1);
 
-			// store the new chromosomes
-			for(population::size_type i=0; i<sub_pop_1_size; i++) {
-				sub_pop_1_x[i] = sub_pop_1_instance.get_individual(i).cur_x;
-				sub_pop_1_f[i] = sub_pop_1_instance.get_individual(i).cur_f;
+			//updating the original problem population (computation of fitness and constraints)
+			pop_1_vector.at(j).clear();
+			for(population::size_type i=0; i<pop_1_size; i++){
+				pop_1_vector.at(j).push_back(pop_1.get_individual(i).cur_x);
 			}
+
+			// set up penalization variables needs for the population 2
+			// the constraints has not been evaluated yet.
+			prob_2.update_penalty_coeff(j,pop_2_x.at(j),pop_1_vector.at(j));
+
+		}
+		// creating the POPULATION 2 instance based on the
+		// updated prob 2
+		population pop_2(prob_2,0);
+
+		// compute the fitness values of the second population
+		for(population::size_type i=0; i<pop_2_size; i++) {
+			pop_2.push_back(pop_2_x[i]);
 		}
 
-		// set up penalization variables needs for the population 2
-		// the constraints has not been evaluated yet.
-		prob_2.update_penalty_coeff(sub_pop_2_x, sub_pop_1_x_vector, sub_pop_1_f_vector);
-		population sub_pop_2(prob_2,0);
-
-		// initialize the instance with pop_1 chromosomes
-		for(population::size_type i=0; i<sub_pop_2_size; i++) {
-			sub_pop_2.push_back(sub_pop_2_x[i]);
-		}
-
-		m_original_algo_2->evolve(sub_pop_2);
+		m_original_algo_penalties->evolve(pop_2);
 
 		// store the new chromosomes
-		for(population::size_type i=0; i<sub_pop_2_size; i++) {
-			sub_pop_2_x[i] = sub_pop_2.get_individual(i).cur_x;
-			sub_pop_2_f[i] = sub_pop_2.get_individual(i).cur_f;
+		for(population::size_type i=0; i<pop_2_size; i++) {
+			pop_2_x[i] = pop_2.get_individual(i).cur_x;
+			pop_2_f[i] = pop_2.get_individual(i).cur_f;
 		}
 	}
 
 	// store the best fitness population in the final pop
 	population::size_type best_idx = 0;
-	for(population::size_type j=1; j<sub_pop_2_size; j++) {
-		if(sub_pop_2_f[j][0] < sub_pop_2_f[best_idx][0]) {
+	for(population::size_type j=1; j<pop_2_size; j++) {
+		if(pop_2_f[j][0] < pop_2_f[best_idx][0]) { 
 			best_idx = j;
 		}
 	}
 
 	// store the final population in the main population
 	pop.clear();
-	for(population::size_type i=0; i<sub_pop_1_size; i++) {
-		pop.push_back(sub_pop_1_x_vector[best_idx][i]);
+	for(population::size_type i=0; i<pop_1_size; i++) {
+		pop = pop_1_vector.at(best_idx);
 	}
 
 	std::cout << pop.champion() << std::endl;
@@ -276,7 +275,7 @@ void cstrs_co_evolution::set_algorithm(const base &algo)
 std::string cstrs_co_evolution::human_readable_extra() const
 {
 	std::ostringstream s;
-	s << "algorithms: " << m_original_algo->get_name() << " - " << m_original_algo_2->get_name() << " ";
+	s << "algorithms: " << m_original_algo->get_name() << " - " << m_original_algo_penalties->get_name() << " ";
 	s << "\n\tConstraints handled with co-evolution algorithm";
 	return s.str();
 }

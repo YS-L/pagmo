@@ -59,8 +59,13 @@ cstrs_co_evolution::cstrs_co_evolution(const base &problem, const algorithm::cst
 		 0.),
 	m_original_problem(problem.clone()),
 	m_method(method),
-	m_penalty_coeff()
+	m_penalty_coeff(),
+	m_decision_vector_hash(),
+	m_map_fitness(),
+	m_map_constraint()
 {
+	population pop(*m_original_problem,0);
+
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
 	}
@@ -75,6 +80,49 @@ cstrs_co_evolution::cstrs_co_evolution(const base &problem, const algorithm::cst
 	std::fill(m_penalty_coeff.begin(),m_penalty_coeff.end(),0.);
 }
 
+cstrs_co_evolution::cstrs_co_evolution(const base &problem, const population& pop, const algorithm::cstrs_co_evolution::method_type method):
+	base((int)problem.get_dimension(),
+		 problem.get_i_dimension(),
+		 problem.get_f_dimension(),
+		 0,
+		 0,
+		 0.),
+	m_original_problem(problem.clone()),
+	m_method(method),
+	m_penalty_coeff(),
+	m_decision_vector_hash(),
+	m_map_fitness(),
+	m_map_constraint()
+{
+	if(m_original_problem->get_c_dimension() <= 0){
+		pagmo_throw(value_error,"The original problem has no constraints.");
+	}
+
+	// check that the dimension of the problem is 1
+	if (m_original_problem->get_f_dimension() != 1) {
+		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with co-evolution meta problem.");
+	}
+	if(problem != pop.problem()) {
+		pagmo_throw(value_error,"The problem linked to the population is not the same as the problem given in argument.");
+	}
+
+	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
+
+	std::fill(m_penalty_coeff.begin(),m_penalty_coeff.end(),0.);
+
+	m_map_fitness.clear();
+	m_map_constraint.clear();
+	// store f and c in maps depending on the the x hash
+	for(population::size_type i=0; i<pop.size(); i++) {
+		const population::individual_type &current_individual = pop.get_individual(i);
+		// m_map_fitness.insert(std::pair<std::size_t, fitness_vector>(m_decision_vector_hash(current_individual.cur_x),current_individual.cur_f));
+		m_map_fitness[m_decision_vector_hash(current_individual.cur_x)]=current_individual.cur_f;
+		m_map_constraint[m_decision_vector_hash(current_individual.cur_x)]=current_individual.cur_c;
+	}
+
+}
+
+
 /// Copy Constructor. Performs a deep copy
 cstrs_co_evolution::cstrs_co_evolution(const cstrs_co_evolution &prob):
 	base((int)prob.get_dimension(),
@@ -85,7 +133,10 @@ cstrs_co_evolution::cstrs_co_evolution(const cstrs_co_evolution &prob):
 		 prob.get_c_tol()),
 	m_original_problem(prob.m_original_problem->clone()),
 	m_penalty_coeff(prob.m_penalty_coeff),
-	m_method(prob.m_method)
+	m_method(prob.m_method),
+	m_decision_vector_hash(prob.m_decision_vector_hash),
+	m_map_fitness(prob.m_map_fitness),
+	m_map_constraint(prob.m_map_constraint)
 {
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
 }
@@ -104,7 +155,14 @@ base_ptr cstrs_co_evolution::clone() const
  */
 void cstrs_co_evolution::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
-	m_original_problem->objfun(f, x);
+	std::map<std::size_t, fitness_vector>::const_iterator it_f;
+
+	it_f = m_map_fitness.find(m_decision_vector_hash(x));
+	if(it_f != m_map_fitness.end()) {
+		f = it_f->second;
+	} else {
+		m_original_problem->objfun(f, x);
+	}
 
 	std::vector<double> sum_viol;
 	std::vector<int> num_viol;
@@ -192,13 +250,16 @@ void cstrs_co_evolution::set_penalty_coeff(const std::vector<double> &penalty_co
 			pagmo_throw(value_error,"The size of the penalty coefficient vector is not 2*number of constraints");
 		}
 		break;
+	default: 
+		pagmo_throw(value_error,"The constraints co-evolutionary method is not valid.");
+		break;
 	}
 	m_penalty_coeff = penalty_coeff;
 }
 
 /// Returns the size of the penalty coefficient the problem expects
 /// depending on the method used.
-int cstrs_co_evolution::get_expected_penalty_coeff_size() {
+int cstrs_co_evolution::get_penalty_coeff_size() {
 	switch(m_method)
 	{
 	case algorithm::cstrs_co_evolution::SIMPLE:
@@ -213,6 +274,9 @@ int cstrs_co_evolution::get_expected_penalty_coeff_size() {
 	}
 	case algorithm::cstrs_co_evolution::SPLIT_CONSTRAINTS:
 		return 2*m_original_problem->get_c_dimension();
+		break;
+	default: 
+		pagmo_throw(value_error,"The constraints co-evolutionary method is not valid.");
 		break;
 	}
 }
@@ -236,7 +300,15 @@ void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vec
 	const std::vector<double> &c_tol = m_original_problem->get_c_tol();
 
 	// updates the current constraint vector
-	m_original_problem->compute_constraints(c,x);
+	std::map<std::size_t, constraint_vector>::const_iterator it_c;
+
+	it_c = m_map_constraint.find(m_decision_vector_hash(x));
+	if(it_c != m_map_constraint.end()) {
+		c = it_c->second;
+	} else {
+		m_original_problem->compute_constraints(c,x);
+	}
+	
 
 	// sets the right definition of the constraints
 	for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
@@ -327,7 +399,7 @@ void cstrs_co_evolution::compute_penalty(std::vector<double> &sum_viol, std::vec
  * as constraints handling technique.
  *
  */
-cstrs_co_evolution_2::cstrs_co_evolution_2(const base &problem, int dimension):
+cstrs_co_evolution_penalty::cstrs_co_evolution_penalty(const base &problem, int dimension, int size):
 	base(dimension,
 		 problem.get_i_dimension(),
 		 1,
@@ -335,13 +407,12 @@ cstrs_co_evolution_2::cstrs_co_evolution_2(const base &problem, int dimension):
 		 0,
 		 0.),
 	m_original_problem(problem.clone()),
-	m_sub_pop_2_x_vector(std::vector<decision_vector>(0)),
-	m_sub_pop_1_f_vector(std::vector< std::vector<double> >(0)),
-	m_feasible_count_vector(std::vector<int>(0)),
-	m_feasible_fitness_sum_vector(std::vector<double>(0)),
+	m_pop_2_x_vector(size, decision_vector(0)),
+	m_feasible_count_vector(size,0),
+	m_feasible_fitness_sum_vector(size,0.0),
 	m_max_feasible_fitness(0.),
-	m_total_sum_viol(0.),
-	m_total_num_viol(0)
+	m_total_sum_viol(size,0.0),
+	m_total_num_viol(size,0)
 {
 	if(m_original_problem->get_c_dimension() <= 0){
 		pagmo_throw(value_error,"The original problem has no constraints.");
@@ -356,7 +427,7 @@ cstrs_co_evolution_2::cstrs_co_evolution_2(const base &problem, int dimension):
 }
 
 /// Copy Constructor. Performs a deep copy
-cstrs_co_evolution_2::cstrs_co_evolution_2(const cstrs_co_evolution_2 &prob):
+cstrs_co_evolution_penalty::cstrs_co_evolution_penalty(const cstrs_co_evolution_penalty &prob):
 	base((int)prob.get_dimension(),
 		 prob.get_i_dimension(),
 		 prob.get_f_dimension(),
@@ -364,8 +435,7 @@ cstrs_co_evolution_2::cstrs_co_evolution_2(const cstrs_co_evolution_2 &prob):
 		 prob.get_ic_dimension(),
 		 prob.get_c_tol()),
 	m_original_problem(prob.m_original_problem->clone()),
-	m_sub_pop_2_x_vector(prob.m_sub_pop_2_x_vector),
-	m_sub_pop_1_f_vector(prob.m_sub_pop_1_f_vector),
+	m_pop_2_x_vector(prob.m_pop_2_x_vector),
 	m_feasible_count_vector(prob.m_feasible_count_vector),
 	m_feasible_fitness_sum_vector(prob.m_feasible_fitness_sum_vector),
 	m_max_feasible_fitness(prob.m_max_feasible_fitness),
@@ -376,9 +446,9 @@ cstrs_co_evolution_2::cstrs_co_evolution_2(const cstrs_co_evolution_2 &prob):
 }
 
 /// Clone method.
-base_ptr cstrs_co_evolution_2::clone() const
+base_ptr cstrs_co_evolution_penalty::clone() const
 {
-	return base_ptr(new cstrs_co_evolution_2(*this));
+	return base_ptr(new cstrs_co_evolution_penalty(*this));
 }
 
 /// Implementation of the objective function.
@@ -386,12 +456,12 @@ base_ptr cstrs_co_evolution_2::clone() const
 /**
  *  Returns the averaged fitness penalized with feasabiltity informaitions.
  */
-void cstrs_co_evolution_2::objfun_impl(fitness_vector &f, const decision_vector &x) const
+void cstrs_co_evolution_penalty::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
 	// search where the x vector is located
 	int position=-1;
-	for(int i=0; i<m_sub_pop_2_x_vector.size(); i++) {
-		if(m_sub_pop_2_x_vector.at(i) == x) {
+	for(int i=0; i<m_pop_2_x_vector.size(); i++) {
+		if(m_pop_2_x_vector.at(i) == x) {
 			position = i;
 			break;
 		}
@@ -419,7 +489,7 @@ void cstrs_co_evolution_2::objfun_impl(fitness_vector &f, const decision_vector 
  * @brief compare_fitness_impl calls the compare_fitness method of the original problem.
  * @return true if v_f1 is dominating v_f2, false otherwise.
  */
-bool cstrs_co_evolution_2::compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const
+bool cstrs_co_evolution_penalty::compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const
 {
 	return m_original_problem->compare_fitness(v_f1,v_f2);
 }
@@ -428,7 +498,7 @@ bool cstrs_co_evolution_2::compare_fitness_impl(const fitness_vector &v_f1, cons
 /**
  * Will return a formatted string containing the type of constraint handling
  */
-std::string cstrs_co_evolution_2::human_readable_extra() const
+std::string cstrs_co_evolution_penalty::human_readable_extra() const
 {
 	std::ostringstream oss;
 	oss << m_original_problem->human_readable_extra() << std::endl;
@@ -437,7 +507,7 @@ std::string cstrs_co_evolution_2::human_readable_extra() const
 	return oss.str();
 }
 
-std::string cstrs_co_evolution_2::get_name() const
+std::string cstrs_co_evolution_penalty::get_name() const
 {
 	return m_original_problem->get_name() + " [cstrs_co_evolution_2]";
 }
@@ -447,65 +517,54 @@ std::string cstrs_co_evolution_2::get_name() const
  *  By calling this method, penalties coefficients and
  *  fitnesses for the whole given population are computed.
  */
-void cstrs_co_evolution_2::update_penalty_coeff(const std::vector<decision_vector> &pop_2_x,
-												const std::vector< std::vector<decision_vector> > &sub_pop_1_x_vector,
-												const std::vector< std::vector<fitness_vector> > &sub_pop_1_f_vector)
+void cstrs_co_evolution_penalty::update_penalty_coeff(population::size_type &index, const decision_vector &pop_2_x, const population  &pop_1)
 {
-	m_sub_pop_2_x_vector = pop_2_x;
+	m_pop_2_x_vector.at(index) = pop_2_x;
 
-	population::size_type sub_pop_1_size = sub_pop_1_x_vector.at(0).size();
-	population::size_type sub_pop_2_size = pop_2_x.size();
-
-	m_feasible_count_vector.resize(sub_pop_2_size);
-	m_feasible_fitness_sum_vector.resize(sub_pop_2_size);
-
-	m_total_sum_viol.resize(sub_pop_2_size);
-	m_total_num_viol.resize(sub_pop_2_size);
+	population::size_type pop_1_size = pop_1.size();
 
 	m_max_feasible_fitness = 0.;
 	// computes the total sum_viol, num_viol...
-	for(population::size_type j=0; j<sub_pop_2_size; j++) {
-		const std::vector<decision_vector> &sub_pop_1_x = sub_pop_1_x_vector.at(j);
-		const std::vector<fitness_vector> &sub_pop_1_f = sub_pop_1_f_vector.at(j);
 
-		m_total_sum_viol[j] = 0.;
-		m_total_num_viol[j] = 0;
 
-		// computes the number of feasible solutions and their sum for the current population
-		int feasible_count = 0;
-		double feasible_fitness_sum = 0.;
+	m_total_sum_viol[index] = 0.;
+	m_total_num_viol[index] = 0;
 
-		double sum_viol_temp = 0.;
-		int num_viol_temp = 0;
-		for(population::size_type i=0; i<sub_pop_1_size; i++) {
+	// computes the number of feasible solutions and their sum for the current population
+	int feasible_count = 0;
+	double feasible_fitness_sum = 0.;
 
-			const decision_vector &current_x = sub_pop_1_x[i];
-			const fitness_vector &current_f = sub_pop_1_f[i];
+	double sum_viol_temp = 0.;
+	int num_viol_temp = 0;
+	for(population::size_type i=0; i<pop_1_size; i++) {
 
-			// computes the constraints / first time this is done
-			const decision_vector &current_c = m_original_problem->compute_constraints(current_x);
+		const decision_vector &current_x = pop_1.get_individual(i).cur_x;
+		const fitness_vector &current_f = pop_1.get_individual(i).cur_f;
 
-			if(m_original_problem->feasibility_c(current_c)) {
-				feasible_count++;
-				feasible_fitness_sum += current_f[0];
 
-				// computes max feasible fitness
-				if(i==0) {
+		const decision_vector &current_c = pop_1.get_individual(i).cur_c;
+
+		if(m_original_problem->feasibility_c(current_c)) {
+			feasible_count++;
+			feasible_fitness_sum += current_f[0];
+			
+			// computes max feasible fitness
+			if(i==0) {
+				m_max_feasible_fitness = current_f[0];
+			} else {
+				if(m_max_feasible_fitness < current_f[0]) {
 					m_max_feasible_fitness = current_f[0];
-				} else {
-					if(m_max_feasible_fitness < current_f[0]) {
-						m_max_feasible_fitness = current_f[0];
-					}
 				}
 			}
-
-			compute_penalty(sum_viol_temp,num_viol_temp,current_c);
-			m_total_sum_viol[j] += sum_viol_temp;
-			m_total_num_viol[j] += num_viol_temp;
 		}
-		m_feasible_count_vector[j] = feasible_count;
-		m_feasible_fitness_sum_vector[j] = feasible_fitness_sum;
+
+		compute_penalty(sum_viol_temp,num_viol_temp,current_c);
+		m_total_sum_viol[index] += sum_viol_temp;
+		m_total_num_viol[index] += num_viol_temp;
 	}
+	m_feasible_count_vector[index] = feasible_count;
+	m_feasible_fitness_sum_vector[index] = feasible_fitness_sum;
+
 }
 
 /// Computes the penalty depending on the provided penalty coefficient.
@@ -515,7 +574,7 @@ void cstrs_co_evolution_2::update_penalty_coeff(const std::vector<decision_vecto
  * @param[in,out] std::vector<double> num_viol number of violation vector.
  * @param[in] decision_vector x.
  */
-void cstrs_co_evolution_2::compute_penalty(double &sum_viol, int &num_viol, const constraint_vector &c) const
+void cstrs_co_evolution_penalty::compute_penalty(double &sum_viol, int &num_viol, const constraint_vector &c) const
 {
 	// get the constraints dimension
 	problem::base::c_size_type prob_c_dimension = m_original_problem->get_c_dimension();
@@ -546,4 +605,4 @@ void cstrs_co_evolution_2::compute_penalty(double &sum_viol, int &num_viol, cons
 }}
 
 BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::problem::cstrs_co_evolution);
-BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::problem::cstrs_co_evolution_2);
+BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::problem::cstrs_co_evolution_penalty);

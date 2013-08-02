@@ -26,6 +26,8 @@
 #define PAGMO_PROBLEM_CSTRS_CO_EVOLUTION_H
 
 #include <string>
+#include <boost/functional/hash.hpp>
+#include <boost/serialization/map.hpp>
 
 #include "../serialization.h"
 #include "../types.h"
@@ -53,6 +55,7 @@ class __PAGMO_VISIBLE cstrs_co_evolution : public base
 public:
 	//constructors
 	cstrs_co_evolution(const base & = cec2006(4), const algorithm::cstrs_co_evolution::method_type = algorithm::cstrs_co_evolution::SIMPLE);
+	cstrs_co_evolution(const base &, const population&, const algorithm::cstrs_co_evolution::method_type = algorithm::cstrs_co_evolution::SIMPLE);
 
 	//copy constructor
 	cstrs_co_evolution(const cstrs_co_evolution &);
@@ -60,7 +63,7 @@ public:
 	std::string get_name() const;
 
 	void set_penalty_coeff(const std::vector<double> &);
-	int get_expected_penalty_coeff_size();
+	int get_penalty_coeff_size();
 
 protected:
 	std::string human_readable_extra() const;
@@ -79,35 +82,36 @@ private:
 		ar & m_original_problem;
 		ar & m_penalty_coeff;
 		ar & const_cast<algorithm::cstrs_co_evolution::method_type &>(m_method);
+		ar & m_map_fitness;
+		ar & m_map_constraint;
 	}
+
 	base_ptr m_original_problem;
 	std::vector<double> m_penalty_coeff;
 
 	const algorithm::cstrs_co_evolution::method_type m_method;
+
+	//caches for fitness and constraints values to not recompute them
+	std::map<std::size_t, fitness_vector> m_map_fitness;
+	std::map<std::size_t, constraint_vector> m_map_constraint;
+
+	// no need to serialize the hasher (and impossible)
+	boost::hash< std::vector<double> > m_decision_vector_hash;
 };
 
-class __PAGMO_VISIBLE cstrs_co_evolution_2 : public base
+class __PAGMO_VISIBLE cstrs_co_evolution_penalty : public base
 {
 public:
-	/// Type of co-evolution.
-	/**
-	* Definition of three types of co-evolution: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
-	* The SIMPLE, is co-evolution defined by COELLO. The SPLIT_NEQ_EQ, splits equalities and
-	* inequalities constraints (4 penalty coefficients). The SPLIT_CONSTRAINTS split the
-	* number of coefficients upon the number of penlaty coefficients (2 * c_dimension).
-	*/
 
 	//constructors
-	cstrs_co_evolution_2(const base & = cec2006(4), int dimension = 2);
+	cstrs_co_evolution_penalty(const base & = cec2006(4), int dimension = 2, int size = 30);
 
 	//copy constructor
-	cstrs_co_evolution_2(const cstrs_co_evolution_2 &);
+	cstrs_co_evolution_penalty(const cstrs_co_evolution_penalty &);
 	base_ptr clone() const;
 	std::string get_name() const;
 
-	void update_penalty_coeff(const std::vector<decision_vector> &,
-							  const std::vector< std::vector<decision_vector> > &,
-							  const std::vector< std::vector<fitness_vector> > &);
+	void update_penalty_coeff(population::size_type &, const decision_vector &, const population  &);
 
 protected:
 	std::string human_readable_extra() const;
@@ -124,8 +128,7 @@ private:
 	{
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_problem;
-		ar & m_sub_pop_2_x_vector;
-		ar & m_sub_pop_1_f_vector;
+		ar & m_pop_2_x_vector;
 		ar & m_feasible_count_vector;
 		ar & m_feasible_fitness_sum_vector;
 		ar & m_max_feasible_fitness;
@@ -134,8 +137,7 @@ private:
 	}
 	base_ptr m_original_problem;
 
-	std::vector<decision_vector> m_sub_pop_2_x_vector;
-	std::vector< std::vector<double> > m_sub_pop_1_f_vector;
+	std::vector<decision_vector> m_pop_2_x_vector;
 
 	// penalty coefficients
 	std::vector<int> m_feasible_count_vector;
@@ -150,6 +152,6 @@ private:
 }} //namespaces
 
 BOOST_CLASS_EXPORT_KEY(pagmo::problem::cstrs_co_evolution);
-BOOST_CLASS_EXPORT_KEY(pagmo::problem::cstrs_co_evolution_2);
+BOOST_CLASS_EXPORT_KEY(pagmo::problem::cstrs_co_evolution_penalty);
 
 #endif // PAGMO_PROBLEM_cstrs_co_evolution_H

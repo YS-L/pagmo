@@ -67,12 +67,12 @@ public:
 	* Definition of three types of co-evolution: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
 	* The SIMPLE, is co-evolution defined by COELLO. The SPLIT_NEQ_EQ, splits equalities and
 	* inequalities constraints (4 penalty coefficients). The SPLIT_CONSTRAINTS split the
-	* number of coefficients upon the number of penlaty coefficients (2 * c_dimension).
+	* number of coefficients upon the number of penalty coefficients (2 * c_dimension).
 	*/
 	// co-evolution simple, split_neq_eq, split_constraints
 	enum method_type {SIMPLE = 0, SPLIT_NEQ_EQ = 1, SPLIT_CONSTRAINTS = 2};
 
-	cstrs_co_evolution(const base & = jde(), const base & = sga(1), int pop_2_size = 30, int gen = 1,
+	cstrs_co_evolution(const base & = jde(), const base & = sga(1), int pop_penalties_size = 30, int gen = 1,
 					   method_type method = SIMPLE, double pen_lower_bound = 0.,
 					   double pen_upper_bound = 100000.);
 	cstrs_co_evolution(const cstrs_co_evolution &);
@@ -94,20 +94,20 @@ private:
 	{
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_algo;
-		ar & m_original_algo_2;
+		ar & m_original_algo_penalties;
 		ar & const_cast<int &>(m_gen);
 		ar & m_method;
-		ar & m_pop_2_size;
+		ar & m_pop_penalties_size;
 		ar & m_pen_lower_bound;
 		ar & m_pen_upper_bound;
 	}
 	base_ptr m_original_algo;
-	base_ptr m_original_algo_2;
+	base_ptr m_original_algo_penalties;
 	//Number of generations
 	const int m_gen;
-	// population 2 size
-	int m_pop_2_size;
-	// problem 2 variables
+	// population encoding penalties size
+	int m_pop_penalties_size;
+	// problem associated to population penalties variables
 	method_type m_method;
 	double m_pen_lower_bound;
 	double m_pen_upper_bound;
