@@ -52,21 +52,34 @@ std::string to_string( const T & value )
 
 double mean(archipelago a, problem::base_ptr original_problem) {
 	double retval = 0;
+	int count_feasible_arch = 0;
 	for (archipelago::size_type i = 0; i< a.get_size(); ++i) {
 		// test feasibility
-		if(original_problem->feasibility_x(a.get_island(i)->get_population().champion().x))
+		if(original_problem->feasibility_x(a.get_island(i)->get_population().champion().x)) {
 			retval += a.get_island(i)->get_population().champion().f[0];
+			count_feasible_arch++;
+		}
 	}
-	return retval / a.get_size();
+	if(count_feasible_arch != 0)
+		return retval / count_feasible_arch;
+	else
+		return 0.;
 }
 double std_dev(archipelago a, double mean, problem::base_ptr original_problem) {
 	double retval = 0;
+	int count_feasible_arch = 0;
 	for (archipelago::size_type i = 0; i< a.get_size(); ++i) {
 		// test feasibility
-		if(original_problem->feasibility_x(a.get_island(i)->get_population().champion().x))
+		if(original_problem->feasibility_x(a.get_island(i)->get_population().champion().x)) {
 			retval += pow((a.get_island(i)->get_population().champion().f[0] - mean),2);
+			count_feasible_arch++;
+		}
 	}
-	return sqrt(retval / a.get_size());
+
+	if(count_feasible_arch != 0)
+		return sqrt(retval / count_feasible_arch);
+	else
+		return 0.;
 }
 
 int number_violated_constraints(const constraint_vector &c, problem::base_ptr original_problem)
@@ -190,10 +203,10 @@ int main()
 	std::vector<algorithm::base_ptr> algos;
 
 	// avoiding elitism here
-	algos.push_back(pagmo::algorithm::sga(1 ,0.9, 0.03, 1000,
-										  algorithm::sga::mutation::RANDOM, 0.1,
-										  algorithm::sga::selection::ROULETTE,
-										  algorithm::sga::crossover::BINOMIAL).clone());
+//	algos.push_back(pagmo::algorithm::sga(1 ,0.9, 0.03, 1000,
+//										  algorithm::sga::mutation::RANDOM, 0.1,
+//										  algorithm::sga::selection::ROULETTE,
+//										  algorithm::sga::crossover::BINOMIAL).clone());
 
 	//	algos.push_back(pagmo::algorithm::sga(1 ,0.9, 0.05, 1000,
 	//										  algorithm::sga::mutation::RANDOM, 0.1,
@@ -210,7 +223,12 @@ int main()
 	//										  algorithm::sga::selection::ROULETTE,
 	//										  algorithm::sga::crossover::BINOMIAL).clone());
 
-	// algos.push_back(pagmo::algorithm::de(1).clone());
+	algos.push_back(pagmo::algorithm::de(1).clone());
+
+//	algos.push_back(pagmo::algorithm::sga_gray(1,0.9,0.003,10000,
+//											   algorithm::sga_gray::mutation::UNIFORM,
+//											   algorithm::sga_gray::selection::ROULETTE,
+//											   algorithm::sga_gray::crossover::SINGLE_POINT).clone());
 
 	//b - We instantiate the topologies
 	std::vector<topology::base_ptr> topo;
