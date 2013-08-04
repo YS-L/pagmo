@@ -37,9 +37,9 @@ int main()
 	//pagmo::algorithm::monte_carlo algo(1); //only one generation for the algo!
 	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
 	pagmo::algorithm::sga_gray algo(1,0.9,0.04, 1000,
-							   algorithm::sga_gray::mutation::GAUSSIAN, 0.1,
-							   algorithm::sga_gray::selection::ROULETTE,
-							   algorithm::sga_gray::crossover::EXPONENTIAL); //only one generation for the algo!
+									algorithm::sga_gray::mutation::UNIFORM,
+									algorithm::sga_gray::selection::ROULETTE,
+									algorithm::sga_gray::crossover::SINGLE_POINT); //only one generation for the algo!
 	//pagmo::algorithm::cmaes algo(1); //only one generation for the algo!
 	//pagmo::algorithm::de algo(1); //only one generation for the algo!
 	//pagmo::algorithm::pso algo(1); //only one generation for the algo!
@@ -55,6 +55,23 @@ int main()
 
 	std::cout << algo_constrained << std::endl;
 	std::cout << prob_constrained << std::endl;
+
+
+
+
+//	// test sga_gray
+//	pagmo::problem::branin prob;
+//	pagmo::algorithm::sga_gray algo(1000,0.9,0.003, 1,
+//									algorithm::sga_gray::mutation::UNIFORM,
+//									algorithm::sga_gray::selection::ROULETTE,
+//									algorithm::sga_gray::crossover::SINGLE_POINT);
+
+//	pagmo::population pop(prob,70);
+//	algo.evolve(pop);
+//	std::cout << pop.champion();
+
+
+
 
 //	pagmo::island isl = island(algo_constrained, prob_constrained, 70);
 
