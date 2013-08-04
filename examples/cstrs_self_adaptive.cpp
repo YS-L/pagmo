@@ -223,12 +223,12 @@ int main()
 	//										  algorithm::sga::selection::ROULETTE,
 	//										  algorithm::sga::crossover::BINOMIAL).clone());
 
-	algos.push_back(pagmo::algorithm::de(1).clone());
+	//algos.push_back(pagmo::algorithm::de(1).clone());
 
-//	algos.push_back(pagmo::algorithm::sga_gray(1,0.9,0.003,10000,
-//											   algorithm::sga_gray::mutation::UNIFORM,
-//											   algorithm::sga_gray::selection::ROULETTE,
-//											   algorithm::sga_gray::crossover::SINGLE_POINT).clone());
+	algos.push_back(pagmo::algorithm::sga_gray(1,0.9,0.003,10000,
+											   algorithm::sga_gray::mutation::UNIFORM,
+											   algorithm::sga_gray::selection::ROULETTE,
+											   algorithm::sga_gray::crossover::SINGLE_POINT).clone());
 
 	//b - We instantiate the topologies
 	std::vector<topology::base_ptr> topo;
