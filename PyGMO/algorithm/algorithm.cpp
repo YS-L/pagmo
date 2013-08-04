@@ -162,6 +162,16 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	enum_<algorithm::sga::selection::type>("_selection_type")
 		.value("BEST20", algorithm::sga::selection::BEST20)
 		.value("ROULETTE", algorithm::sga::selection::ROULETTE);
+
+	enum_<algorithm::sga_gray::mutation::type>("_mutation_type")
+		.value("GAUSSIAN", algorithm::sga_gray::mutation::UNIFORM);
+	
+	enum_<algorithm::sga_gray::crossover::type>("_crossover_type")
+		.value("EXPONENTIAL", algorithm::sga_gray::crossover::SINGLE_POINT);
+		
+	enum_<algorithm::sga_gray::selection::type>("_selection_type")
+		.value("BEST20", algorithm::sga_gray::selection::BEST20)
+		.value("ROULETTE", algorithm::sga_gray::selection::ROULETTE);
 		
 	// Expose algorithms.
 
@@ -232,6 +242,10 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	// Simple Genetic Algorithm.
 	algorithm_wrapper<algorithm::sga>("sga", "A simple genetic algorithm (generational)")
 		.def(init<int, optional<const double &, const double &, int, algorithm::sga::mutation::type, double, algorithm::sga::selection::type, algorithm::sga::crossover::type> >());
+	
+	// Simple Genetic Algorithm with binary gray encoding.
+	algorithm_wrapper<algorithm::sga_gray>("sga_gray", "A simple genetic algorithm with gray binary encoding (generational)")
+		.def(init<int, optional<const double &, const double &, int, algorithm::sga_gray::mutation::type, algorithm::sga_gray::selection::type, algorithm::sga_gray::crossover::type> >());
 	
 	// (N+1)-EA - Simple Evolutionary Algorithm
 	algorithm_wrapper<algorithm::sea>("sea", "(N+1)-EA - A Simple Evolutionary Algorithm")

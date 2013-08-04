@@ -12,26 +12,27 @@ problems of certain types: (Continuous, Integer or Mixed Integer)-(Constrained, 
 
 Heuristic Optimization
 ^^^^^^^^^^^^^^^^^^^^^^
-================================== ========================================= =============== ===================================================================
-Common Name                        Name in PyGMO                             Type            Comments
-================================== ========================================= =============== ===================================================================
-Differential Evolution (DE)        :class:`PyGMO.algorithm.de`                    C-U-S      The original algorithm
-Self-adaptive DE (jDE)             :class:`PyGMO.algorithm.jde`                   C-U-S      Self-adaptive F, CR
-DE with p-best crossover (mde_pbx) :class:`PyGMO.algorithm.mde_pbx`               C-U-S      Self-adaptive F, CR
-Differential Evolution (DE)        :class:`PyGMO.algorithm.de_1220`               C-U-S      Our own brew. self adaptive F, CR and variants 
-Particle Swarm Optimization (PSO)  :class:`PyGMO.algorithm.pso`                   C-U-S      The PSO algorithm (canonical, with constriction factor, FIPS, etc.)
-Particle Swarm Optimization (PSO)  :class:`PyGMO.algorithm.pso_gen`               C-U-S      Generational (also problems deriving from base_stochastic)
-Simple Genetic Algorithm (SGA)     :class:`PyGMO.algorithm.sga`                  MI-U-S 
-(N+1)-EA Evol. Algorithm (SEA)     :class:`PyGMO.algorithm.sea`                   I-U-M      The multiobjective extension uses crowding distance operator
-Non-dominated Sorting GA (NSGA2)   :class:`PyGMO.algorithm.nsga_II`               C-U-M      NSGA-II
-Corana's Simulated Annealing (SA)  :class:`PyGMO.algorithm.sa_corana`             C-U-S 
-Artificial Bee Colony (ABC)        :class:`PyGMO.algorithm.bee_colony`            C-U-S 
-Improved Harmony Search (IHS)      :class:`PyGMO.algorithm.ihs`                  MI-U-M      Integer and Multiobjetive not tested yet
-Monte Carlo Search (MC)            :class:`PyGMO.algorithm.monte_carlo`          MI-C-S
-Monte Carlo Search (MC)            :class:`PyGMO.algorithm.py_example`           MI-C-S      Written directly in Python
-Covariance Matrix Adaptation-ES    :class:`PyGMO.algorithm.py_cmaes`              C-U-S      Written directly in Python
-Covariance Matrix Adaptation-ES    :class:`PyGMO.algorithm.cmaes`                 C-U-S
-================================== ========================================= =============== ===================================================================
+========================================= ========================================= =============== ===================================================================
+Common Name                               Name in PyGMO                             Type            Comments
+========================================= ========================================= =============== ===================================================================
+Differential Evolution (DE)               :class:`PyGMO.algorithm.de`                    C-U-S      The original algorithm
+Self-adaptive DE (jDE)                    :class:`PyGMO.algorithm.jde`                   C-U-S      Self-adaptive F, CR
+DE with p-best crossover (mde_pbx)        :class:`PyGMO.algorithm.mde_pbx`               C-U-S      Self-adaptive F, CR
+Differential Evolution (DE)               :class:`PyGMO.algorithm.de_1220`               C-U-S      Our own brew. self adaptive F, CR and variants 
+Particle Swarm Optimization (PSO)         :class:`PyGMO.algorithm.pso`                   C-U-S      The PSO algorithm (canonical, with constriction factor, FIPS, etc.)
+Particle Swarm Optimization (PSO)         :class:`PyGMO.algorithm.pso_gen`               C-U-S      Generational (also problems deriving from base_stochastic)
+Simple Genetic Algorithm (SGA)            :class:`PyGMO.algorithm.sga`                  MI-U-S 
+Simple Genetic Algorithm GRAY (SGA_GRAY)  :class:`PyGMO.algorithm.sga`                   C-U-S      Simple genetic algorithm with gray binary encoding
+(N+1)-EA Evol. Algorithm (SEA)            :class:`PyGMO.algorithm.sea`                   I-U-M      The multiobjective extension uses crowding distance operator
+Non-dominated Sorting GA (NSGA2)          :class:`PyGMO.algorithm.nsga_II`               C-U-M      NSGA-II
+Corana's Simulated Annealing (SA)         :class:`PyGMO.algorithm.sa_corana`             C-U-S 
+Artificial Bee Colony (ABC)               :class:`PyGMO.algorithm.bee_colony`            C-U-S 
+Improved Harmony Search (IHS)             :class:`PyGMO.algorithm.ihs`                  MI-U-M      Integer and Multiobjetive not tested yet
+Monte Carlo Search (MC)                   :class:`PyGMO.algorithm.monte_carlo`          MI-C-S
+Monte Carlo Search (MC)                   :class:`PyGMO.algorithm.py_example`           MI-C-S      Written directly in Python
+Covariance Matrix Adaptation-ES           :class:`PyGMO.algorithm.py_cmaes`              C-U-S      Written directly in Python
+Covariance Matrix Adaptation-ES           :class:`PyGMO.algorithm.cmaes`                 C-U-S
+========================================= ========================================= =============== ===================================================================
 
 Meta-algorithms 
 ^^^^^^^^^^^^^^^
@@ -136,6 +137,26 @@ Detailed Documentation
    .. attribute:: PyGMO.algorithm.sga.crossover.EXPONENTIAL
 
      Exponential crossover
+
+.. autoclass:: PyGMO.algorithm.sga_gray
+
+   .. automethod:: PyGMO.algorithm.sga_gray.__init__
+
+   .. attribute:: PyGMO.algorithm.sga_gray.mutation.UNIFORM
+
+     Uniform mutation 
+
+   .. attribute:: PyGMO.algorithm.sga_gray.selection.ROULETTE
+
+     Roulette selection mechanism
+
+   .. attribute:: PyGMO.algorithm.sga_gray.selection.BEST20
+
+     Best 20% individuals are inserted over and over again
+
+   .. attribute:: PyGMO.algorithm.sga_gray.crossover.SINGLE_POINT
+
+     Single point crossover
 
 .. autoclass:: PyGMO.algorithm.nsga_II
 

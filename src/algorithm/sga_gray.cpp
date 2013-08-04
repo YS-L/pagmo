@@ -88,74 +88,8 @@ base_ptr sga_gray::clone() const
  *
  * @param[in,out] pop input/output pagmo::population to be evolved.
  */
-
 void sga_gray::evolve(population &pop) const
 {
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << double_to_binary(0,0,15) << std::endl;
-	//	std::cout << double_to_binary(1,0,15) << std::endl;
-	//	std::cout << double_to_binary(2,0,15) << std::endl;
-	//	std::cout << double_to_binary(3,0,15) << std::endl;
-	//	std::cout << double_to_binary(4,0,15) << std::endl;
-	//	std::cout << double_to_binary(5,0,15) << std::endl;
-	//	std::cout << double_to_binary(6,0,15) << std::endl;
-	//	std::cout << double_to_binary(7,0,15) << std::endl;
-	//	std::cout << double_to_binary(8,0,15) << std::endl;
-	//	std::cout << double_to_binary(9,0,15) << std::endl;
-	//	std::cout << double_to_binary(10,0,15) << std::endl;
-	//	std::cout << double_to_binary(11,0,15) << std::endl;
-	//	std::cout << double_to_binary(12,0,15) << std::endl;
-	//	std::cout << double_to_binary(13,0,15) << std::endl;
-	//	std::cout << double_to_binary(14,0,15) << std::endl;
-	//	std::cout << double_to_binary(15,0,15) << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(0,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(1,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(2,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(3,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(4,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(5,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(6,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(7,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(8,0,15),0,15) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(9,0,15),0,15) << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(0,0,4),0,4) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(1,0,4),0,4) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(2,0,4),0,4) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(3,0,4),0,4) << std::endl;
-	//	std::cout << binary_to_double(double_to_binary(4,0,4),0,4) << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << double_to_binary(-1,-1,1) << std::endl;
-	//	std::cout << double_to_binary(-0.5,-1,1) << std::endl;
-	//	std::cout << double_to_binary(0,-1,1) << std::endl;
-	//	std::cout << double_to_binary(0.5,-1,1) << std::endl;
-	//	std::cout << double_to_binary(1,-1,1) << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << "------------  GRAY  ----------------" << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(0,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(1,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(2,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(3,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(4,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(5,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(6,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(7,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(8,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(9,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(10,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(11,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(12,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(13,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(14,0,15))) << std::endl;
-	//	std::cout << gray_to_binary(binary_to_gray(double_to_binary(15,0,15))) << std::endl;
-	//	std::cout << "------------------------------------" << std::endl;
-
 	// Let's store some useful variables.
 	const problem::base &prob = pop.problem();
 	const problem::base::size_type D = prob.get_dimension(), prob_c_dimension = prob.get_c_dimension(), prob_f_dimension = prob.get_f_dimension();
@@ -173,6 +107,10 @@ void sga_gray::evolve(population &pop) const
 
 	if (NP < 5) {
 		pagmo_throw(value_error,"for sga_gray at least 5 individuals in the population are needed");
+	}
+
+	if (prob.get_i_dimension() > 1) {
+		pagmo_throw(value_error,"This version of SGA gray is not compatble with discrete problems.");
 	}
 
 	// Get out if there is nothing to do.
@@ -327,6 +265,14 @@ std::string sga_gray::human_readable_extra() const
 	return s.str();
 }
 
+/// Select the individuals.
+/**
+ * Returns a vector of selected individuals positions.
+ *
+ * @param[in] pop_f: population fitness.
+ * @param[in] prob: problem used to compare the individuals fitness.
+ * @param[out] vector output of positions of selected individuals.
+ */
 std::vector<int> sga_gray::selection(const std::vector<fitness_vector> &pop_f, const problem::base &prob) const
 {
 	population::size_type NP = pop_f.size();
@@ -406,6 +352,12 @@ std::vector<int> sga_gray::selection(const std::vector<fitness_vector> &pop_f, c
 	return selection;
 }
 
+/// Crossover the individuals.
+/**
+ * Crossover the individuals chromosomes.
+ *
+ * @param[in/out] pop_x: vector of chromosomes to crossover.
+ */
 void sga_gray::crossover(std::vector< std::vector<int> > &pop_x) const
 {
 	population::size_type NP = pop_x.size();
@@ -458,6 +410,12 @@ void sga_gray::crossover(std::vector< std::vector<int> > &pop_x) const
 	}
 }
 
+/// Mutate the individuals.
+/**
+ * Mutate the individuals chromosomes.
+ *
+ * @param[in/out] pop_x: vector of chromosomes to mutate.
+ */
 void sga_gray::mutate(std::vector< std::vector<int> > &pop_x) const
 {
 	const problem::base::size_type D = pop_x.at(0).size();
@@ -477,6 +435,14 @@ void sga_gray::mutate(std::vector< std::vector<int> > &pop_x) const
 	}
 }
 
+/// Convert a number to its binary representation.
+/**
+ *
+ * @param[in] number: number to convert in binary representation.
+ * @param[in] lb: lower bound for the encoding.
+ * @param[in] ub: upper bound for the encoding.
+ * @param[out] chromosome containing the binary representation of the number.
+ */
 std::vector<int> sga_gray::double_to_binary(const double &number, const double &lb, const double &ub) const
 {
 	// initialize the vector of size m_bit_encoding
@@ -504,6 +470,13 @@ std::vector<int> sga_gray::double_to_binary(const double &number, const double &
 	return binary;
 }
 
+/// Convert a binary to its double representation.
+/**
+ * @param[in] binary: binary chromosome to convert in double.
+ * @param[in] lb: lower bound for the encoding.
+ * @param[in] ub: upper bound for the encoding.
+ * @param[out] chromosome containing the binary representation of the number.
+ */
 double sga_gray::binary_to_double(const std::vector<int> &binary, const double &lb, const double &ub) const
 {
 	// find the representation of the binary number in the integer domain
@@ -517,7 +490,11 @@ double sga_gray::binary_to_double(const std::vector<int> &binary, const double &
 	return temp_number * (ub - lb) / (m_max_encoding_integer - 1) + lb;
 }
 
-
+/// Convert a gray chromosome to its binary representation.
+/**
+ * @param[in] gray: gray chromosome to convert in its binar representation.
+ * @param[out] chromosome containing the binary representation of the gray chromosome.
+ */
 std::vector<int> sga_gray::gray_to_binary(const std::vector<int> &gray) const
 {
 	// uses the XOR table
@@ -533,6 +510,11 @@ std::vector<int> sga_gray::gray_to_binary(const std::vector<int> &gray) const
 	return binary;
 }
 
+/// Convert a binary chromosome to its gray representation.
+/**
+ * @param[in] binary: binary chromosome to convert in its gray representation.
+ * @param[out] chromosome containing the gray representation of the binary chromosome.
+ */
 std::vector<int> sga_gray::binary_to_gray(const std::vector<int> &binary) const
 {
 	int length = binary.size();
@@ -547,6 +529,13 @@ std::vector<int> sga_gray::binary_to_gray(const std::vector<int> &binary) const
 	return gray;
 }
 
+/// Encode a decision vector in its a gray representation chromosome.
+/**
+ * @param[in] decision_vector x to convert in its gray representation.
+ * @param[in] lb: lower bounds for the encoding.
+ * @param[in] ub: upper bounds for the encoding.
+ * @param[out] chromosome containing the gray representation of the decision vector.
+ */
 std::vector<int> sga_gray::encode(const decision_vector &x, const decision_vector &lb, const decision_vector &ub) const
 {
 	std::vector<int> encoded_x(x.size() * m_bit_encoding, 0);
@@ -562,6 +551,13 @@ std::vector<int> sga_gray::encode(const decision_vector &x, const decision_vecto
 	return encoded_x;
 }
 
+/// Decode a gray encoded chromosome in its a decision vector representation.
+/**
+ * @param[in] chrom: chromosome to convert in its vector of double (decision vector) representation.
+ * @param[in] lb: lower bounds for the encoding.
+ * @param[in] ub: upper bounds for the encoding.
+ * @param[out] chromosome containing the decision vector representation of the chromosome.
+ */
 decision_vector sga_gray::decode(const std::vector<int> &chrom, const decision_vector &lb, const decision_vector &ub) const
 {
 	decision_vector decoded_x(chrom.size() / m_bit_encoding, 0.);
