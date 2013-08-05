@@ -26,13 +26,18 @@
 #include <iomanip>
 #include "src/pagmo.h"
 
+#include "src/algorithm/cstrs_co_evolution.h"
+
 using namespace pagmo;
 
 // Example in C++ of the use of PaGMO 1.1.4
 
 int main()
 {
-	pagmo::problem::cec2006 prob_constrained(4);
+	//pagmo::problem::cec2006 prob_constrained(4);
+	//pagmo::problem::welded_beam prob_constrained;
+	//pagmo::problem::tens_comp_string prob_constrained;
+	pagmo::problem::pressure_vessel prob_constrained;
 
 	//pagmo::algorithm::monte_carlo algo(1);
 	//pagmo::algorithm::sga algo(1);
@@ -44,10 +49,14 @@ int main()
 //	pagmo::algorithm::de algo(25);
 //	pagmo::algorithm::sga algo_2(1);
 
-	pagmo::algorithm::de algo(25, 0.8, 0.9, 2, 1e-15, 1e-15);
-	pagmo::algorithm::de algo_2(1, 0.8, 0.9, 2, 1e-15, 1e-15);
+//	pagmo::algorithm::de algo(25, 0.8, 0.9, 2, 1e-15, 1e-15);
+//	pagmo::algorithm::de algo_2(1, 0.8, 0.9, 2, 1e-15, 1e-15);
 
-	pagmo::algorithm::cstrs_co_evolution algo_constrained(algo, algo_2, 30, 20);
+	pagmo::algorithm::pso algo(25);
+	pagmo::algorithm::pso algo_2(1);
+
+	pagmo::algorithm::cstrs_co_evolution algo_constrained(algo, algo_2, 30, 20,
+														  pagmo::algorithm::cstrs_co_evolution::SIMPLE, 1., 999.);
 
 	std::cout << algo_constrained;
 
