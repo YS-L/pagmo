@@ -42,14 +42,14 @@ using namespace kep_toolbox;
 double best(archipelago a) {
 	double retval = boost::numeric::bounds<double>::highest();
 	for (archipelago::size_type i = 0; i< a.get_size(); ++i) {
-		retval = fmin(retval, a.get_island(i)->get_population().champion().f[0]);
+		retval = std::min(retval, a.get_island(i)->get_population().champion().f[0]);
 	}
 	return retval;
 }
 double worst(archipelago a) {
 	double retval = - boost::numeric::bounds<double>::highest();
 	for (archipelago::size_type i = 0; i< a.get_size(); ++i) {
-		retval = fmax(retval, a.get_island(i)->get_population().champion().f[0]);
+		retval = std::max(retval, a.get_island(i)->get_population().champion().f[0]);
 	}
 	return retval;
 }
