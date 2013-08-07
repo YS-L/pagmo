@@ -32,11 +32,11 @@ using namespace pagmo;
 
 int main()
 {
-	pagmo::problem::cec2006 prob_constrained(7);
+	pagmo::problem::cec2006 prob_constrained(5);
 
 	//pagmo::algorithm::monte_carlo algo(1); //only one generation for the algo!
 	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
-	pagmo::algorithm::sga_gray algo(1,0.9,0.04, 1000,
+	pagmo::algorithm::sga_gray algo(1,0.9,0.003, 1,
 									algorithm::sga_gray::mutation::UNIFORM,
 									algorithm::sga_gray::selection::ROULETTE,
 									algorithm::sga_gray::crossover::SINGLE_POINT); //only one generation for the algo!
