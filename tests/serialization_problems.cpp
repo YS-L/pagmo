@@ -173,6 +173,9 @@ int main()
 				    problem::noisy::NORMAL).clone());
 	probs_new.push_back(problem::noisy(zdt1_before_transform1,111,1.0,4.5,
 					    problem::noisy::UNIFORM).clone());
+	//----- robust ----- //
+	probs.push_back(problem::robust(zdt1_before_transform1, 0.1, 123).clone());
+	probs_new.push_back(problem::robust(zdt1_before_transform1, 1.23, 456).clone());
 
 	//----- Test constraints handling meta-problems -----//
 	problem::cec2006 cec2006_before_cstrs_handling(7);

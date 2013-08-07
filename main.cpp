@@ -33,7 +33,7 @@ using namespace pagmo;
 int main()
 {
 	pagmo::problem::cec2006 prob_constrained(5);
-
+	
 	//pagmo::algorithm::monte_carlo algo(1); //only one generation for the algo!
 	//pagmo::algorithm::sga algo(1); //only one generation for the algo!
 	pagmo::algorithm::sga_gray algo(1,0.9,0.003, 1,
@@ -55,9 +55,6 @@ int main()
 
 	std::cout << algo_constrained << std::endl;
 	std::cout << prob_constrained << std::endl;
-
-
-
 
 //	// test sga_gray
 //	pagmo::problem::branin prob;

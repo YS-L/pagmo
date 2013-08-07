@@ -20,13 +20,14 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/cs.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/ihs.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/sga.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/algorithm/sga_gray.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/algorithm/sga_gray.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/monte_carlo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/null.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/sa_corana.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/mbh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/ms.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/algorithm/self_adaptive.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/self_adaptive.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/pade.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/base.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/base_r_policy.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/base_s_policy.cpp
@@ -82,13 +83,14 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/cec2006.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/cec2009.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/cec2013.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/problem/death_penalty.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/death_penalty.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/self_adaptive.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/shifted.cpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/rotated.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/normalized.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/decompose.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/noisy.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/robust.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/barabasi_albert.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/clustered_ba.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/ageing_clustered_ba.cpp
@@ -104,6 +106,10 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/unconnected.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/watts_strogatz.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/rng.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/util/racing.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/util/discrepancy.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/util/neighbourhood.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/util/race_pop.cpp
 )
 
 # Additional files for the GTOP problems and keplerian toolbox.
