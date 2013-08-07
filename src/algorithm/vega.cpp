@@ -159,7 +159,7 @@ void vega::evolve(population &pop) const
 	for(unsigned int i=0; i<prob_f_dimension; i++) {
 		std::vector<double> sub_prob_weights(prob_f_dimension,0.);
 		sub_prob_weights[i] = 1.;
-		sub_probs.push_back(problem::decompose(prob, sub_prob_weights).clone());
+		sub_probs.push_back(problem::decompose(prob, problem::decompose::WEIGHTED, sub_prob_weights).clone());
 	}
 
 	// Main VEGA loop
