@@ -80,6 +80,7 @@
 #include "problem/normalized.h"
 #include "problem/decompose.h"
 #include "problem/noisy.h"
+#include "problem/robust.h"
 
 // GSL problems.
 #ifdef PAGMO_ENABLE_GSL

@@ -25,6 +25,7 @@ Simple Genetic Algorithm (SGA)            :class:`PyGMO.algorithm.sga`          
 Vector Evaluated Genetic Algorithm (VEGA) :class:`PyGMO.algorithm.vega`                 MI-U-M      VEGA algorithm, multi-objective extension of SGA
 (N+1)-EA Evol. Algorithm (SEA)            :class:`PyGMO.algorithm.sea`                   I-U-M      The multiobjective extension uses crowding distance operator
 Non-dominated Sorting GA (NSGA2)          :class:`PyGMO.algorithm.nsga_II`               C-U-M      NSGA-II
+Parallel Decomposition (PADE)             :class:`PyGMO.algorithm.pade`                  C-U-M      Parallel Decomposition
 Corana's Simulated Annealing (SA)         :class:`PyGMO.algorithm.sa_corana`             C-U-S 
 Artificial Bee Colony (ABC)               :class:`PyGMO.algorithm.bee_colony`            C-U-S 
 Improved Harmony Search (IHS)             :class:`PyGMO.algorithm.ihs`                  MI-U-M      Integer and Multiobjetive not tested yet
@@ -33,6 +34,7 @@ Monte Carlo Search (MC)                   :class:`PyGMO.algorithm.py_example`   
 Covariance Matrix Adaptation-ES           :class:`PyGMO.algorithm.py_cmaes`              C-U-S      Written directly in Python
 Covariance Matrix Adaptation-ES           :class:`PyGMO.algorithm.cmaes`                 C-U-S
 ========================================= ========================================= =============== ===================================================================
+>>>>>>> constraints
 
 Meta-algorithms 
 ^^^^^^^^^^^^^^^
@@ -160,6 +162,10 @@ Detailed Documentation
 .. autoclass:: PyGMO.algorithm.nsga_II
 
    .. automethod:: PyGMO.algorithm.nsga_II.__init__
+
+.. autoclass:: PyGMO.algorithm.pade
+
+   .. automethod:: PyGMO.algorithm.pade.__init__
 
 .. autoclass:: PyGMO.algorithm.sa_corana
 
