@@ -71,7 +71,7 @@ sga_gray::sga_gray(int gen, const double &cr, const double &m, int elitism, muta
 		pagmo_throw(value_error,"elitisim must be greater than zero");
 	}
 
-	m_bit_encoding = 24;
+	m_bit_encoding = 25;
 	m_max_encoding_integer = int(std::pow(2., m_bit_encoding));
 }
 
