@@ -39,19 +39,6 @@ int main()
 	//pagmo::problem::tens_comp_string prob_constrained;
 	pagmo::problem::pressure_vessel prob_constrained;
 
-	//pagmo::algorithm::monte_carlo algo(1);
-	//pagmo::algorithm::sga algo(1);
-	//pagmo::algorithm::sga algo(25,0.9,0.04, 1000,
-	//						   algorithm::sga::mutation::GAUSSIAN, 0.1,
-	//						   algorithm::sga::selection::ROULETTE,
-	//						   algorithm::sga::crossover::EXPONENTIAL);
-	//pagmo::algorithm::cmaes algo(25);
-//	pagmo::algorithm::de algo(25);
-//	pagmo::algorithm::sga algo_2(1);
-
-//	pagmo::algorithm::de algo(25, 0.8, 0.9, 2, 1e-15, 1e-15);
-//	pagmo::algorithm::de algo_2(1, 0.8, 0.9, 2, 1e-15, 1e-15);
-
 	pagmo::algorithm::pso algo(25);
 	pagmo::algorithm::pso algo_2(1);
 
@@ -60,7 +47,7 @@ int main()
 	algo_constrained.reset_rngs(100);
 
 	std::cout << algo_constrained;
-
+	
 	for (size_t i=0; i<1; ++i) {
 		pagmo::population pop(prob_constrained,60);
 		pagmo::population pop_copy = pop;

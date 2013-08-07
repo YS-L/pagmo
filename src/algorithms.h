@@ -49,6 +49,7 @@
 #include "algorithm/aco.h"
 #include "algorithm/nsga2.h"
 #include "algorithm/cstrs_co_evolution.h"
+#include "algorithm/pade.h"
 
 // Hyper-heuristics
 #include "algorithm/mbh.h"
