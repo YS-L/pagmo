@@ -190,7 +190,7 @@ void cstrs_co_evolution::evolve(population &pop) const
 
 			// initialize P1 chromosomes. The fitnesses related to problem 1 are computed
 			for(population::size_type i=0; i<pop_1_size; i++) {
-				pop_1.push_back(pop.get_individual(i).cur_x);
+				pop_1.push_back(pop_1_vector.at(j).get_individual(i).cur_x);
 			}
 
 			// evolve the P1 instance
