@@ -297,7 +297,7 @@ def _pressure_vessel_ctor(self):
 pressure_vessel._orig_init = pressure_vessel.__init__
 pressure_vessel.__init__ = _pressure_vessel_ctor
 
-def tens_comp_string(self):
+def _tens_comp_string_ctor(self):
 	"""
 	Constructs a tension compression string design problem (Constrained Continuous Single-Objective)
 
@@ -309,7 +309,7 @@ def tens_comp_string(self):
 tens_comp_string._orig_init = tens_comp_string.__init__
 tens_comp_string.__init__ = _tens_comp_string_ctor
 
-def welded_beam(self):
+def _welded_beam_ctor(self):
 	"""
 	Constructs a welded beam design problem (Constrained Continuous Single-Objective)
 

@@ -136,10 +136,10 @@ problem::base_ptr get_constrained_prob(problem::base_ptr prob, int i) {
 	return prob;
 }
 
-algorithm::base_ptr get_constrained_algo(algorithm::base_ptr algo_1, algorithm::base_ptr algo_2, int i) {
+algorithm::base_ptr get_constrained_algo(algorithm::base_ptr algo_1, algorithm::base_ptr algo_2, int i, int penaltysize, int gen) {
 	switch(i) {
 	case(0):
-		return pagmo::algorithm::cstrs_co_evolution(*algo_1, *algo_2, 30, 20,
+		return pagmo::algorithm::cstrs_co_evolution(*algo_1, *algo_2, penaltysize, gen,
 													pagmo::algorithm::cstrs_co_evolution::SIMPLE, 1., 999.).clone();
 		break;
 	default:
@@ -178,9 +178,10 @@ int main()
 	std::cout << std::setprecision(5);
 
 	//0 - Experiment parameters
-	size_t number_of_islands = 30;
-	size_t number_of_individuals_pop_1 = 60;
-	size_t number_of_individuals_pop_2 = 30;
+	size_t number_of_islands = 1;
+	size_t number_of_individuals_pop_1 = 6;//60;
+	size_t number_of_individuals_pop_2 = 6;//30;
+	size_t number_of_generations = 20;
 	// size_t function_evaluations = 100;
 	size_t number_of_migrations = 1;
 	// int gen = function_evaluations/number_of_individuals/number_of_migrations;
@@ -247,7 +248,7 @@ int main()
 
 				for (unsigned int al=0; al<algos_1.size(); ++al) {
 					// we generate the constrained algorithm
-					algorithm::base_ptr constrained_algorithm = get_constrained_algo(algos_1[al], algos_2[al], ch);
+					algorithm::base_ptr constrained_algorithm = get_constrained_algo(algos_1[al], algos_2[al], ch, number_of_individuals_pop_2, number_of_generations);
 
 					pagmo::archipelago a = pagmo::archipelago(*topo[to]);
 
