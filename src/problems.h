@@ -74,12 +74,14 @@
 #include "problem/cec2009.h"
 #include "problem/cec2013.h"
 #include "problem/death_penalty.h"
+#include "problem/antibodies_problem.h"
 #include "problem/shifted.h"
 #include "problem/rotated.h"
 #include "problem/normalized.h"
 #include "problem/decompose.h"
 #include "problem/noisy.h"
 #include "problem/robust.h"
+#include "problem/unconstrain.h"
 
 // GSL problems.
 #ifdef PAGMO_ENABLE_GSL

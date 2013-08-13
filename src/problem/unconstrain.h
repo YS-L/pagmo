@@ -22,52 +22,55 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#include <iostream>
-#include <iomanip>
-#include "src/pagmo.h"
+#ifndef PAGMO_PROBLEM_UNCONSTRAIN_H
+#define PAGMO_PROBLEM_UNCONSTRAIN_H
 
-using namespace pagmo;
+#include <string>
 
-// Example in C++ of the use of PaGMO 1.1.4
+#include "../serialization.h"
+#include "../types.h"
+#include "cec2006.h"
+#include "base.h"
 
-int main()
+namespace pagmo{ namespace problem {
+
+/// Constrained to unconstrained meta-problem
+/**
+ * Implements a meta-problem class that wraps some other constrained problems,
+ * resulting in unconstrained problem by simply removing the constraints.
+ *
+ * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
+ */
+
+class __PAGMO_VISIBLE unconstrain : public base
 {
-	pagmo::problem::cec2006 prob_constrained(4);
-	//pagmo::problem::welded_beam prob_constrained;
-	//pagmo::problem::tens_comp_string prob_constrained;
-	//pagmo::problem::pressure_vessel prob_constrained;
+public:
+	//constructors
+	unconstrain(const base & = cec2006(4));
 
-	pagmo::algorithm::pso algo(25);
-	pagmo::algorithm::pso algo_2(80);
+	//copy constructor
+	unconstrain(const unconstrain &);
+	base_ptr clone() const;
+	std::string get_name() const;
 
-	pagmo::algorithm::immune_system algo_constrained(algo, algo_2, 1000,
-													 pagmo::algorithm::immune_system::SIMPLE);
-	algo_constrained.reset_rngs(100);
+protected:
+	std::string human_readable_extra() const;
+	void objfun_impl(fitness_vector &, const decision_vector &) const;
+	bool compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const;
 
-	std::cout << algo_constrained;
-
-	for (size_t i=0; i<1; ++i) {
-		pagmo::population pop(prob_constrained,90);
-		pagmo::population pop_copy = pop;
-		algo_constrained.evolve(pop);
-		std::cout<<"CHAMPION1"<<std::endl;
-		std::cout << pop.champion();
-		std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"<<std::endl;
-		algo_constrained.evolve(pop_copy);
-		std::cout<<"CHAMPION2"<<std::endl;
-		std::cout << pop_copy.champion();
+private:
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int)
+	{
+		ar & boost::serialization::base_object<base>(*this);
+		ar & m_original_problem;
 	}
+	base_ptr m_original_problem;
+};
 
-	std::cout << algo_constrained << std::endl;
-	std::cout << prob_constrained << std::endl;
+}} //namespaces
 
-	std::cin.get();
-//	pagmo::island isl = island(algo_constrained, prob_constrained, 70);
+BOOST_CLASS_EXPORT_KEY(pagmo::problem::unconstrain);
 
-//	for (size_t i=0; i<20; ++i){
-//		isl.evolve(1);
-//		std::cout << isl.get_population().champion();
-//	}
-
-	return 0;
-}
+#endif // PAGMO_PROBLEM_unconstrain_H
