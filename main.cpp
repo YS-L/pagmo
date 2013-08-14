@@ -32,13 +32,13 @@ using namespace pagmo;
 
 int main()
 {
-	pagmo::problem::cec2006 prob_constrained(6);
+	pagmo::problem::cec2006 prob_constrained(4);
 	//pagmo::problem::welded_beam prob_constrained;
 	//pagmo::problem::tens_comp_string prob_constrained;
 	//pagmo::problem::pressure_vessel prob_constrained;
 
-	pagmo::algorithm::sga algo(1);
-	pagmo::algorithm::sga algo_2(70);
+	pagmo::algorithm::de algo(1);
+	pagmo::algorithm::de algo_2(70);
 
 	pagmo::algorithm::immune_system algo_constrained(algo, algo_2, 5000,
 													 pagmo::algorithm::immune_system::INFEASIBILITY);

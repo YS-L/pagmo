@@ -138,13 +138,14 @@ void immune_system::evolve(population &pop) const
 
 	std::vector<double> pop_antigens_fitness_meas;
 
-//	// the initial popluation contains the initial random population
-//	for(population::size_type i=0; i<pop_size; i++) {
-//		pop_mixed.push_back(pop.get_individual(i).cur_x);
-//	}
-
 	// Main Co-Evolution loop
 	for(int k=0; k<m_gen; k++) {
+
+//		pop_mixed.clear();
+//		// the initial popluation contains the initial random population
+//		for(population::size_type i=0; i<pop_size; i++) {
+//			pop_mixed.push_back(pop.get_individual(i).cur_x);
+//		}
 
 		// clearing the pools
 		pop_antigens_pool.clear();
@@ -171,11 +172,9 @@ void immune_system::evolve(population &pop) const
 			}
 		}
 
-		// first method to select the antigen population
 		// if feasible solutions exist in the population, the
-		// antigens are selected by being the average of the population
-		// and store the position of the feasible idx
-		//population::size_type pop_feasibles_size = pop_feasibles.size();
+		// antigens are selected by being close to the average fitness
+		// of a sub population
 
 		// at that time, we know if the population has feasible individuals
 		if(has_feasible) {
@@ -341,7 +340,7 @@ void immune_system::evolve(population &pop) const
 
 		// the problem can be updated with antigenes
 		// need to be done here to avoid a cast
-		problem::antibodies_problem prob_antibodies(prob, problem::antibodies_problem::HAMMING);
+		problem::antibodies_problem prob_antibodies(prob, problem::antibodies_problem::EUCLIDEAN);
 		prob_antibodies.set_antigens(pop_antigens);
 
 		// immune system initialization
@@ -357,9 +356,6 @@ void immune_system::evolve(population &pop) const
 
 		// the mixed initial population + antibodies can be evolved normally
 		pop_mixed.clear();
-
-		// sets the mixed population with all current best designs
-		// and enough copies of constraint conditioned designs
 		for(population::size_type i=0; i<pop_antigens_pool.size(); i++) {
 			const population::size_type &current_idx = pop_antigens_pool.at(i);
 			pop_mixed.push_back(pop.get_individual(current_idx).cur_x);
@@ -369,6 +365,17 @@ void immune_system::evolve(population &pop) const
 			// should be an option (with copies of the 25% best)
 			pop_mixed.push_back(pop_antibodies.champion().x);
 		}
+
+		// if using this version instead, this is not working (need to find why):
+
+//		// sets the mixed population with all current best designs
+//		// and the copies of constraint conditioned designs
+//		for(population::size_type i=0; i<pop_antibodies_pool.size(); i++) {
+//			const population::size_type &current_idx = pop_antibodies_pool.at(i);
+//			// multiple copies of the best antibody
+//			// should be an option (with copies of the 25% best)
+//			pop_mixed.set_x(current_idx, pop_antibodies.champion().x);
+//		}
 
 		// for individuals, evolve the mixed population
 		// which is unconstrained problem

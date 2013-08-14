@@ -190,14 +190,16 @@ double antibodies_problem::compute_distance(const decision_vector &x) const {
 	}
 	case(EUCLIDEAN): {
 		for(decision_vector::size_type j=0; j<m_pop_antigens.size(); j++) {
+
+			double euclid = 0.;
 			const decision_vector &antigen_decision = m_pop_antigens.at(j);
 
 			for(decision_vector::size_type i=0; i<x.size(); i++) {
-				distance += std::pow(x.at(i) - antigen_decision.at(i),2);
+				euclid += std::pow(x.at(i) - antigen_decision.at(i),2);
 			}
+			distance += std::sqrt(euclid);
 		}
 
-		distance = std::sqrt(distance);
 		break;
 	}
 	}
