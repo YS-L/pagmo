@@ -159,31 +159,48 @@ void antibodies_problem::set_antigens(const std::vector<decision_vector> &pop_an
  *
  */
 double antibodies_problem::compute_distance(const decision_vector &x) const {
-	// hamming distance
 	double distance = 0.;
 
-	// lower bound
-	const decision_vector &lb = get_lb();
-	const decision_vector &ub = get_ub();
+	// hamming distance
 
-	for(decision_vector::size_type i=0; i<x.size(); i++) {
+	switch(m_method) {
+	case(HAMMING): {
+		const decision_vector &lb = get_lb();
+		const decision_vector &ub = get_ub();
 
-		std::vector<int> current_binary_gene = double_to_binary(x.at(i), lb.at(i), ub.at(i));
+		for(decision_vector::size_type i=0; i<x.size(); i++) {
 
-		for(decision_vector::size_type j=0; j<m_pop_antigens.size(); j++) {
+			std::vector<int> current_binary_gene = double_to_binary(x.at(i), lb.at(i), ub.at(i));
 
-			std::vector<int> antigens_binary_gene = double_to_binary((m_pop_antigens.at(j)).at(i), lb.at(i), ub.at(i));
+			for(decision_vector::size_type j=0; j<m_pop_antigens.size(); j++) {
 
-			for(int k=0; k<antigens_binary_gene.size(); k++) {
-				distance += antigens_binary_gene.at(k) && current_binary_gene.at(k);
+				std::vector<int> antigens_binary_gene = double_to_binary((m_pop_antigens.at(j)).at(i), lb.at(i), ub.at(i));
+
+				for(int k=0; k<antigens_binary_gene.size(); k++) {
+					distance += antigens_binary_gene.at(k) && current_binary_gene.at(k);
+				}
 			}
 		}
-	}
 
-	// we take the inverse of the distance as the measure we need is
-	// how close the x is from the antigen population
-	// which means that we need to maximize the ressemblance
-	distance = - distance;
+		// we take the inverse of the distance as the measure we need is
+		// how close the x is from the antigen population
+		// which means that we need to maximize the ressemblance
+		distance = - distance;
+		break;
+	}
+	case(EUCLIDEAN): {
+		for(decision_vector::size_type j=0; j<m_pop_antigens.size(); j++) {
+			const decision_vector &antigen_decision = m_pop_antigens.at(j);
+
+			for(decision_vector::size_type i=0; i<x.size(); i++) {
+				distance += std::pow(x.at(i) - antigen_decision.at(i),2);
+			}
+		}
+
+		distance = std::sqrt(distance);
+		break;
+	}
+	}
 
 	return distance;
 }

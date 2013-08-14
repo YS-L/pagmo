@@ -54,9 +54,9 @@ unconstrain::unconstrain(const unconstrain &prob):
 	base((int)prob.get_dimension(),
 		 prob.get_i_dimension(),
 		 prob.get_f_dimension(),
-		 prob.get_c_dimension(),
-		 prob.get_ic_dimension(),
-		 prob.get_c_tol()),
+		 0,
+		 0,
+		 0.),
 	m_original_problem(prob.m_original_problem->clone())
 {
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());

@@ -70,10 +70,10 @@ public:
 	* number of coefficients upon the number of penalty coefficients (2 * c_dimension).
 	*/
 	// co-evolution simple, split_neq_eq, split_constraints
-	enum method_type {SIMPLE = 0, SPLIT_NEQ_EQ = 1, SPLIT_CONSTRAINTS = 2};
+	enum method_type {BEST_ANTIBODY = 0, INFEASIBILITY = 1};
 
 	immune_system(const base & = jde(), const base & = sga(1), int gen = 1,
-					   method_type method = SIMPLE);
+					   method_type method = BEST_ANTIBODY);
 	immune_system(const immune_system &);
 	base_ptr clone() const;
 
@@ -103,6 +103,9 @@ private:
 	const int m_gen;
 	// problem associated to population penalties variables
 	method_type m_method;
+
+private:
+	double compute_solution_infeasibility(const constraint_vector &, const constraint_vector &, const problem::base &) const;
 
 };
 
