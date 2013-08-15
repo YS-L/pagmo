@@ -37,8 +37,8 @@ int main()
 	//pagmo::problem::tens_comp_string prob_constrained;
 	//pagmo::problem::pressure_vessel prob_constrained;
 
-	pagmo::algorithm::de algo(1);
-	pagmo::algorithm::de algo_2(70);
+	pagmo::algorithm::de algo(1, 0.8, 0.9, 2, 1e-15, 1e-15);
+	pagmo::algorithm::de algo_2(70, 0.8, 0.9, 2, 1e-15, 1e-15);
 
 	pagmo::algorithm::immune_system algo_constrained(algo, algo_2, 5000,
 													 pagmo::algorithm::immune_system::INFEASIBILITY);

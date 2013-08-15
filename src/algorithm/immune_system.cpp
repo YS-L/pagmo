@@ -61,8 +61,8 @@ namespace pagmo { namespace algorithm {
  * @throws value_error if stop is negative
  */
 immune_system::immune_system(const base &original_algo, const base &original_algo_immune,
-							 int gen, method_type method):
-	base(),m_gen(gen),m_method(method)
+							 int gen, method_type method,double ftol, double xtol):
+	base(),m_gen(gen),m_method(method),m_ftol(ftol),m_xtol(xtol)
 {
 	m_original_algo = original_algo.clone();
 	m_original_algo_immune = original_algo_immune.clone();
@@ -76,7 +76,7 @@ immune_system::immune_system(const base &original_algo, const base &original_alg
 immune_system::immune_system(const immune_system &algo):
 	base(algo),m_original_algo(algo.m_original_algo->clone()),
 	m_original_algo_immune(algo.m_original_algo_immune->clone()),m_gen(algo.m_gen),
-	m_method(algo.m_method)
+	m_method(algo.m_method),m_ftol(algo.m_ftol),m_xtol(algo.m_xtol)
 {}
 
 /// Clone method.
@@ -96,6 +96,7 @@ void immune_system::evolve(population &pop) const
 	// Let's store some useful variables.
 	const problem::base &prob = pop.problem();
 	const population::size_type pop_size = pop.size();
+	const problem::base::size_type prob_dimension = prob.get_dimension();
 
 	// get the constraints dimension
 	problem::base::c_size_type prob_c_dimension = prob.get_c_dimension();
@@ -118,6 +119,7 @@ void immune_system::evolve(population &pop) const
 
 	// associates the population to this problem
 	population pop_mixed(prob_unconstrained);
+	std::vector<decision_vector> pop_mixed_c(pop_size);
 
 	// initializaton of antigens vector and antibodies population
 
@@ -153,19 +155,18 @@ void immune_system::evolve(population &pop) const
 		pop_antigens_pool.clear();
 		pop_antibodies_pool.clear();
 
-
 		// first of all we compute the constraints
-		//		for(population::size_type i=0; i<pop_size; i++) {
-		//			pop_mixed_c.push_back(prob.compute_constraints(pop.get_individual(i).cur_x));
-		//		}
+		for(population::size_type i=0; i<pop_size; i++) {
+			const population::individual_type &current_individual = pop_mixed.get_individual(i);
+			pop_mixed_c[i] = prob.compute_constraints(current_individual.cur_x);
+		}
 
-		// we find if there is feasible individuals
+		// we find if there are feasible individuals
 		bool has_feasible = false;
 
 		for(population::size_type i=0; i<pop_size; i++) {
-			const population::individual_type &current_individual = pop.get_individual(i);
 
-			if(prob.feasibility_c(current_individual.cur_c)) {
+			if(prob.feasibility_c(pop_mixed_c[i])) {
 				has_feasible = true;
 				break;
 			}
@@ -307,7 +308,6 @@ void immune_system::evolve(population &pop) const
 						if(prob.compare_constraints(current_second_individual.cur_c, current_individual.cur_c)) {
 							std::swap(pop_antigens_pool[i],pop_antigens_pool[j]);
 						}
-
 					}
 				}
 
@@ -392,9 +392,6 @@ void immune_system::evolve(population &pop) const
 			pop_antigens_size = pop_antigens.size();
 			pop_antibodies_size = pop_antibodies.size();
 
-			std::cout << "pop_antigens_size" << pop_antigens_size << std::endl;
-			std::cout << "pop_antibodies_size" << pop_antibodies_size << std::endl;
-
 			// run the immune system
 			m_original_algo_immune->evolve(pop_antibodies);
 
@@ -424,6 +421,41 @@ void immune_system::evolve(population &pop) const
 		}
 
 		std::cout << pop.champion() << std::endl;
+
+		// Check the exit conditions (every 40 generations, just as DE)
+		if(k % 40 == 0) {
+			decision_vector tmp(prob_dimension);
+
+			double dx = 0;
+			for(decision_vector::size_type i=0; i<prob_dimension; i++) {
+				tmp[i] = pop_mixed.get_individual(pop_mixed.get_worst_idx()).best_x[i] - pop_mixed.get_individual(pop_mixed.get_best_idx()).best_x[i];
+				dx += std::fabs(tmp[i]);
+			}
+
+			if(dx < m_xtol ) {
+				if (m_screen_output) {
+					std::cout << "Exit condition -- xtol < " << m_xtol << std::endl;
+				}
+				return;
+			}
+
+			double mah = std::fabs(pop_mixed.get_individual(pop_mixed.get_worst_idx()).best_f[0] - pop_mixed.get_individual(pop_mixed.get_best_idx()).best_f[0]);
+
+			if(mah < m_ftol) {
+				if(m_screen_output) {
+					std::cout << "Exit condition -- ftol < " << m_ftol << std::endl;
+				}
+				return;
+			}
+
+			// outputs current values
+			if(m_screen_output) {
+				std::cout << "Generation " << k << " ***" << std::endl;
+				std::cout << "    Best global fitness: " << pop.champion().f << std::endl;
+				std::cout << "    xtol: " << dx << ", ftol: " << mah << std::endl;
+				std::cout << "    xtol: " << dx << ", ftol: " << mah << std::endl;
+			}
+		}
 	}
 }
 
