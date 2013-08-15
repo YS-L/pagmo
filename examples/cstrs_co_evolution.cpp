@@ -178,10 +178,10 @@ int main()
 	std::cout << std::setprecision(5);
 
 	//0 - Experiment parameters
-	size_t number_of_islands = 1;
-	size_t number_of_individuals_pop_1 = 6;//60;
-	size_t number_of_individuals_pop_2 = 6;//30;
-	size_t number_of_generations = 20;
+	size_t number_of_islands = 20;
+	size_t number_of_individuals_pop_1 = 60;
+	size_t number_of_individuals_pop_2 = 30;
+	size_t number_of_generations = 50;
 	// size_t function_evaluations = 100;
 	size_t number_of_migrations = 1;
 	// int gen = function_evaluations/number_of_individuals/number_of_migrations;

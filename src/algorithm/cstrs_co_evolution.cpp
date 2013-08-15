@@ -239,7 +239,6 @@ void cstrs_co_evolution::evolve(population &pop) const
 		pop = pop_1_vector.at(best_idx);
 	}
 
-	std::cout << pop.champion() << std::endl;
 }
 
 /// Algorithm name
