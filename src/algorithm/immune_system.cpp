@@ -136,31 +136,30 @@ void immune_system::evolve(population &pop) const
 	std::vector<population::size_type> pop_antigens_pool;
 	std::vector<population::size_type> pop_antibodies_pool;
 
-	std::vector<double> pop_antigens_fitness_meas;
-
 	// Main Co-Evolution loop
 	for(int k=0; k<m_gen; k++) {
 
-//		pop_mixed.clear();
-//		// the initial popluation contains the initial random population
-//		for(population::size_type i=0; i<pop_size; i++) {
-//			pop_mixed.push_back(pop.get_individual(i).cur_x);
-//		}
+		std::cout << "iter: " << k << std::endl;
+
+		pop_mixed.clear();
+		// the initial popluation contains the initial random population
+		for(population::size_type i=0; i<pop_size; i++) {
+			pop_mixed.push_back(pop.get_individual(i).cur_x);
+		}
+
+		pop_antigens.clear();
 
 		// clearing the pools
 		pop_antigens_pool.clear();
 		pop_antibodies_pool.clear();
 
-		pop_antigens_fitness_meas.clear();
-
-		pop_antigens.clear();
 
 		// first of all we compute the constraints
-//		for(population::size_type i=0; i<pop_size; i++) {
-//			pop_mixed_c.push_back(prob.compute_constraints(pop.get_individual(i).cur_x));
-//		}
+		//		for(population::size_type i=0; i<pop_size; i++) {
+		//			pop_mixed_c.push_back(prob.compute_constraints(pop.get_individual(i).cur_x));
+		//		}
 
-		// first we find feasible individuals
+		// we find if there is feasible individuals
 		bool has_feasible = false;
 
 		for(population::size_type i=0; i<pop_size; i++) {
@@ -176,7 +175,6 @@ void immune_system::evolve(population &pop) const
 		// antigens are selected by being close to the average fitness
 		// of a sub population
 
-		// at that time, we know if the population has feasible individuals
 		if(has_feasible) {
 			// the pop_antigens_pool is based on the feasible population
 			for(population::size_type i=0; i<pop_size; i++) {
@@ -206,12 +204,14 @@ void immune_system::evolve(population &pop) const
 				}
 			}
 
+			// a subset of the best antigens in the pool is selected to compute the fitness average
 			int pop_antigens_subset_size = std::max((int)(phi * pop_antigens_pool_size),1);
 
 			// we compute the mean fitness value from the subset of the best individuals in the population
 			double mean_fitness = 0.;
 			for(population::size_type i=0; i<pop_antigens_subset_size; i++) {
-				mean_fitness += pop.get_individual(pop_antigens_pool.at(i)).cur_f.at(0);
+				const population::size_type &current_idx = pop_antigens_pool.at(i);
+				mean_fitness += pop.get_individual(current_idx).cur_f.at(0);
 			}
 			mean_fitness /= pop_antigens_subset_size;
 
@@ -222,23 +222,39 @@ void immune_system::evolve(population &pop) const
 			// according to Hjale and Lee. The idea here is to get as much information about the
 			// feasible domain as possible.
 
-			population::size_type mean_position=0;
+			int mean_position_idx=0;
 			for(population::size_type i=0; i<pop_antigens_pool_size; i++) {
-				if(mean_fitness <= pop.get_individual(pop_antigens_pool.at(i)).cur_f.at(0)) {
-					mean_position = i;
+				const population::size_type &current_idx = pop_antigens_pool.at(i);
+				if(mean_fitness <= pop.get_individual(current_idx).cur_f.at(0)) {
+					mean_position_idx = i;
 					break;
 				}
 			}
 
 			// generates the antigens population
-			population::size_type pop_antigens_size = std::max((int)(gamma * pop_antigens_pool_size), 1);
-			population::size_type begin_antigen_idx = std::max((int)(mean_position - pop_antigens_size/2), 0);
-			population::size_type end_antigen_idx = std::min(begin_antigen_idx + pop_antigens_size,pop_antigens_pool_size);
+			int pop_antigens_size = std::max((int)(gamma * pop_antigens_pool_size), 1);
+
+			int begin_antigen_idx = mean_position_idx - pop_antigens_size/2;
+			int end_antigen_idx = mean_position_idx + pop_antigens_size/2;
+
+			// move the selection range depending on the boundaries
+			if(mean_position_idx - pop_antigens_size/2 < 0) {
+				begin_antigen_idx = 0;
+				end_antigen_idx = std::min((int)(end_antigen_idx + (pop_antigens_size/2 - mean_position_idx)),(int)pop_antigens_pool_size);
+			}
+			if(mean_position_idx + pop_antigens_size/2 >= pop_antigens_size) {
+				begin_antigen_idx = std::max((int)(begin_antigen_idx - (mean_position_idx + pop_antigens_size/2 - pop_antigens_size)),0);
+				end_antigen_idx = pop_antigens_size;
+			}
 
 			// we select individuals around the mean
 			for(population::size_type i=begin_antigen_idx; i<end_antigen_idx; i++) {
 				population::size_type current_individual_idx = pop_antigens_pool.at(i);
 				pop_antigens.push_back(pop.get_individual(current_individual_idx).cur_x);
+			}
+
+			if(pop_antigens.size() == 0) {
+				pop_antigens.push_back(pop.get_individual(pop_antigens_pool.at(mean_position_idx)).cur_x);
 			}
 
 		} else {
@@ -260,6 +276,7 @@ void immune_system::evolve(population &pop) const
 					}
 				}
 				pop_antigens_pool.push_back(best_idx);
+				pop_antigens.push_back(pop.get_individual(best_idx).cur_x);
 
 				// antibodies
 				for(population::size_type i=0; i<pop_size; i++) {
@@ -294,97 +311,113 @@ void immune_system::evolve(population &pop) const
 					}
 				}
 
-				// avoid having a too large population of antigens
-				pop_antigens_pool.resize(pop_size/5);
+				// fill the antigens with the best ones
+				int pop_antigens_size = std::max((int)(gamma * pop_antigens_pool_size), 1);
+
+				for(population::size_type i=0; i<pop_antigens_size; i++) {
+					population::size_type current_individual_idx = pop_antigens_pool.at(i);
+					pop_antigens.push_back(pop.get_individual(current_individual_idx).cur_x);
+				}
 
 				// antibodies
+				// not the best implementation, trying to find a better one...
 				for(population::size_type i=0; i<pop_size; i++) {
-					if(std::find(pop_antigens_pool.begin(), pop_antigens_pool.end(), i) == pop_antigens_pool.end()) {
+					if(std::find(pop_antigens_pool.begin(), pop_antigens_pool.begin()+pop_antigens_size, i) == pop_antigens_pool.begin()+pop_antigens_size) {
 						pop_antibodies_pool.push_back(i);
 					}
 				}
 				break;
 			}
 			}
+		}
 
-			// we select the best individuals for the population of antigens
-			for(population::size_type i=0; i<pop_antigens_pool.size(); i++) {
-				population::size_type current_individual_idx = pop_antigens_pool.at(i);
-				pop_antigens.push_back(pop.get_individual(current_individual_idx).cur_x);
+		population::size_type initial_pop_antibodies_pool_size = pop_antibodies_pool.size();
+
+		if(initial_pop_antibodies_pool_size != 0) {
+
+			// initial pool size
+			// random shuffle of the antibodies as the antibodies population
+			// are randomly selected without replacement from the antibodies pool
+			if(initial_pop_antibodies_pool_size > 1) {
+				for (population::size_type i=0; i<initial_pop_antibodies_pool_size; i++)
+				{
+					int j = boost::uniform_int<int>(0, initial_pop_antibodies_pool_size - 1)(m_urng);
+					std::swap(pop_antibodies_pool[i], pop_antibodies_pool[j]);
+				}
+			}
+
+			// select the antibodies population with the requested size:
+			// antibodies population size = 1/3 antigens population size
+
+			population::size_type pop_antigens_size = pop_antigens.size();
+
+			int min_individual_for_algo = 8;
+
+			population::size_type pop_antibodies_size = std::max( (int)(sigma * pop_antigens_size), min_individual_for_algo);
+			pop_antibodies_size = std::min( pop_antibodies_size, initial_pop_antibodies_pool_size);
+
+			//population::size_type pop_antibodies_size = std::max((int)(0.5 * pop_antigens_size), 6);
+			//population::size_type pop_antibodies_size = std::max((int)(pop_antibodies_pool.size()), 6);
+
+			// the problem can be updated with antigenes, need to be done here to avoid a cast
+			problem::antibodies_problem prob_antibodies(prob, problem::antibodies_problem::EUCLIDEAN);
+			prob_antibodies.set_antigens(pop_antigens);
+
+			// immune system initialization
+			population pop_antibodies(prob_antibodies);
+			pop_antibodies.clear();
+
+			for(population::size_type i=0; i<pop_antibodies_size; i++) {
+				pop_antibodies.push_back(pop.get_individual(pop_antibodies_pool.at(i)).cur_x);
+			}
+
+			// ensure that the antibodies population has at least 6 individuals for de, sga, 8 for jde...
+			int extra_antibodies_size = min_individual_for_algo - pop_antibodies_size;
+
+			// this test is needed as for some reason i<extra_antibodies_size can provoque an
+			// infinite loop if extra_antibodies_size < 0! Due to population::size_type?
+			if(extra_antibodies_size > 0) {
+				// add extra needed by randomly selecting the individuals in the pool
+				for(population::size_type i=0; i<extra_antibodies_size; i++) {
+					if(initial_pop_antibodies_pool_size > 1) {
+						int j = boost::uniform_int<int>(0, initial_pop_antibodies_pool_size - 1)(m_urng);
+
+						pop_antibodies.push_back(pop.get_individual(pop_antibodies_pool.at(j)).cur_x);
+					} else {
+						pop_antibodies.push_back(pop.get_individual(pop_antibodies_pool.at(0)).cur_x);
+					}
+				}
+			}
+
+			pop_antigens_size = pop_antigens.size();
+			pop_antibodies_size = pop_antibodies.size();
+
+			std::cout << "pop_antigens_size" << pop_antigens_size << std::endl;
+			std::cout << "pop_antibodies_size" << pop_antibodies_size << std::endl;
+
+			// run the immune system
+			m_original_algo_immune->evolve(pop_antibodies);
+
+			// if using this version instead, this is not working (need to find why):
+
+			// sets the mixed population with all current best designs
+			// and the copies of constraint conditioned designs
+			for(population::size_type i=0; i<initial_pop_antibodies_pool_size; i++) {
+				const population::size_type &current_idx = pop_antibodies_pool.at(i);
+				// multiple copies of the best antibody
+				// should be an option (with copies of the 25% best)
+				pop_mixed.set_x(current_idx, pop_antibodies.champion().x);
 			}
 		}
 
-		// the antibodies population is randomly selected without replacement
-		// from the antibodies pool
-
-		// random shuffle of the population
-		for (population::size_type i=0; i<pop_antibodies_pool.size(); i++)
-		{
-			int j = boost::uniform_int<int>(0, pop_antibodies_pool.size() - 1)(m_urng);
-			std::swap(pop_antibodies_pool[i], pop_antibodies_pool[j]);
-		}
-
-		// truncate the population to the requested size:
-		// antibodies population size = 1/3 antigens population size
-		// ensure that the antibodies population has at least 6 individuals for de, sga...
-		population::size_type pop_antigens_size = pop_antigens.size();
-
-		population::size_type pop_antibodies_size = std::max((int)(sigma * pop_antigens_size), 6);
-		//population::size_type pop_antibodies_size = std::max((int)(0.5 * pop_antigens_size), 6);
-		//population::size_type pop_antibodies_size = std::max((int)(pop_antibodies_pool.size()), 6);
-
-		std::cout << "pop_antigens_size" << pop_antigens_size << std::endl;
-		std::cout << "pop_antibodies_size" << pop_antibodies_size << std::endl;
-
-		pop_antibodies_pool.resize(pop_antibodies_size);
-
-		// the problem can be updated with antigenes
-		// need to be done here to avoid a cast
-		problem::antibodies_problem prob_antibodies(prob, problem::antibodies_problem::EUCLIDEAN);
-		prob_antibodies.set_antigens(pop_antigens);
-
-		// immune system initialization
-		population pop_antibodies(prob_antibodies);
-		pop_antibodies.clear();
-
-		for(population::size_type i=0; i<pop_antibodies_pool.size(); i++) {
-			pop_antibodies.push_back(pop.get_individual(pop_antibodies_pool.at(i)).cur_x);
-		}
-
-		// run the immune system
-		m_original_algo_immune->evolve(pop_antibodies);
-
-		// the mixed initial population + antibodies can be evolved normally
-		pop_mixed.clear();
-		for(population::size_type i=0; i<pop_antigens_pool.size(); i++) {
-			const population::size_type &current_idx = pop_antigens_pool.at(i);
-			pop_mixed.push_back(pop.get_individual(current_idx).cur_x);
-		}
-		for(population::size_type i=pop_antigens_pool.size(); i<pop_size; i++) {
-			// multiple copies of the best antibody
-			// should be an option (with copies of the 25% best)
-			pop_mixed.push_back(pop_antibodies.champion().x);
-		}
-
-		// if using this version instead, this is not working (need to find why):
-
-//		// sets the mixed population with all current best designs
-//		// and the copies of constraint conditioned designs
-//		for(population::size_type i=0; i<pop_antibodies_pool.size(); i++) {
-//			const population::size_type &current_idx = pop_antibodies_pool.at(i);
-//			// multiple copies of the best antibody
-//			// should be an option (with copies of the 25% best)
-//			pop_mixed.set_x(current_idx, pop_antibodies.champion().x);
-//		}
-
 		// for individuals, evolve the mixed population
-		// which is unconstrained problem
+		// which is an unconstrained problem
+		// only one iteration should be done...
 		m_original_algo->evolve(pop_mixed);
 
-		// we update the population pop with the new
+		// we update the population pop with the new population
 
-		// store the final population in the main population
-		// can't avoid the reevaluation?
+		// store the final population in the main population, just for checking the right convergence
 		pop.clear();
 		for(population::size_type i=0; i<pop_size; i++) {
 			pop.push_back(pop_mixed.get_individual(i).cur_x);

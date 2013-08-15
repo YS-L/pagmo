@@ -66,7 +66,7 @@ antibodies_problem::antibodies_problem(const base &problem, const method_type me
 	}
 
 	// check that the dimension of the problem is 1
-	if (m_original_problem->get_f_dimension() != 1) {
+	if(m_original_problem->get_f_dimension() != 1) {
 		pagmo_throw(value_error,"The original fitness dimension of the problem must be one, multi objective problems can't be handled with co-evolution meta problem.");
 	}
 
