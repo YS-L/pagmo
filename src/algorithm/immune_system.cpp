@@ -138,16 +138,16 @@ void immune_system::evolve(population &pop) const
 	std::vector<population::size_type> pop_antigens_pool;
 	std::vector<population::size_type> pop_antibodies_pool;
 
+	pop_mixed.clear();
+	// the initial popluation contains the initial random population
+	for(population::size_type i=0; i<pop_size; i++) {
+		pop_mixed.push_back(pop.get_individual(i).cur_x);
+	}
+
 	// Main Co-Evolution loop
 	for(int k=0; k<m_gen; k++) {
 
 		std::cout << "iter: " << k << std::endl;
-
-		pop_mixed.clear();
-		// the initial popluation contains the initial random population
-		for(population::size_type i=0; i<pop_size; i++) {
-			pop_mixed.push_back(pop.get_individual(i).cur_x);
-		}
 
 		pop_antigens.clear();
 
@@ -165,7 +165,6 @@ void immune_system::evolve(population &pop) const
 		bool has_feasible = false;
 
 		for(population::size_type i=0; i<pop_size; i++) {
-
 			if(prob.feasibility_c(pop_mixed_c[i])) {
 				has_feasible = true;
 				break;
@@ -179,9 +178,7 @@ void immune_system::evolve(population &pop) const
 		if(has_feasible) {
 			// the pop_antigens_pool is based on the feasible population
 			for(population::size_type i=0; i<pop_size; i++) {
-				const population::individual_type &current_individual = pop.get_individual(i);
-
-				if(prob.feasibility_c(current_individual.cur_c)) {
+				if(prob.feasibility_c(pop_mixed_c[i])) {
 					pop_antigens_pool.push_back(i);
 				} else {
 					pop_antibodies_pool.push_back(i);
@@ -193,11 +190,11 @@ void immune_system::evolve(population &pop) const
 			// we sort the pop_antigens_pool according to the fitness
 			for(population::size_type i=0; i<pop_antigens_pool_size-1; i++) {
 				const population::size_type &current_idx = pop_antigens_pool.at(i);
-				const population::individual_type &current_individual = pop.get_individual(current_idx);
+				const population::individual_type &current_individual = pop_mixed.get_individual(current_idx);
 
 				for(population::size_type j=i+1; j<pop_antigens_pool_size; j++) {
 					const population::size_type &current_second_idx = pop_antigens_pool.at(j);
-					const population::individual_type &current_second_individual = pop.get_individual(current_second_idx);
+					const population::individual_type &current_second_individual = pop_mixed.get_individual(current_second_idx);
 
 					if(prob.compare_fitness(current_second_individual.cur_f, current_individual.cur_f)) {
 						std::swap(pop_antigens_pool[i],pop_antigens_pool[j]);
@@ -212,7 +209,7 @@ void immune_system::evolve(population &pop) const
 			double mean_fitness = 0.;
 			for(population::size_type i=0; i<pop_antigens_subset_size; i++) {
 				const population::size_type &current_idx = pop_antigens_pool.at(i);
-				mean_fitness += pop.get_individual(current_idx).cur_f.at(0);
+				mean_fitness += pop_mixed.get_individual(current_idx).cur_f.at(0);
 			}
 			mean_fitness /= pop_antigens_subset_size;
 
@@ -226,7 +223,7 @@ void immune_system::evolve(population &pop) const
 			int mean_position_idx=0;
 			for(population::size_type i=0; i<pop_antigens_pool_size; i++) {
 				const population::size_type &current_idx = pop_antigens_pool.at(i);
-				if(mean_fitness <= pop.get_individual(current_idx).cur_f.at(0)) {
+				if(mean_fitness <= pop_mixed.get_individual(current_idx).cur_f.at(0)) {
 					mean_position_idx = i;
 					break;
 				}
@@ -251,11 +248,11 @@ void immune_system::evolve(population &pop) const
 			// we select individuals around the mean
 			for(population::size_type i=begin_antigen_idx; i<end_antigen_idx; i++) {
 				population::size_type current_individual_idx = pop_antigens_pool.at(i);
-				pop_antigens.push_back(pop.get_individual(current_individual_idx).cur_x);
+				pop_antigens.push_back(pop_mixed.get_individual(current_individual_idx).cur_x);
 			}
 
 			if(pop_antigens.size() == 0) {
-				pop_antigens.push_back(pop.get_individual(pop_antigens_pool.at(mean_position_idx)).cur_x);
+				pop_antigens.push_back(pop_mixed.get_individual(pop_antigens_pool.at(mean_position_idx)).cur_x);
 			}
 
 		} else {
@@ -268,16 +265,12 @@ void immune_system::evolve(population &pop) const
 				// individual with lowest constraints violation
 				population::size_type best_idx = 0;
 				for(population::size_type i=1; i<pop_size; i++) {
-
-					const population::individual_type &best_individual = pop.get_individual(best_idx);
-					const population::individual_type &current_individual = pop.get_individual(i);
-
-					if(prob.compare_constraints(current_individual.cur_c, best_individual.cur_c)) {
+					if(prob.compare_constraints(pop_mixed_c[i], pop_mixed_c[best_idx])) {
 						best_idx = i;
 					}
 				}
 				pop_antigens_pool.push_back(best_idx);
-				pop_antigens.push_back(pop.get_individual(best_idx).cur_x);
+				pop_antigens.push_back(pop_mixed.get_individual(best_idx).cur_x);
 
 				// antibodies
 				for(population::size_type i=0; i<pop_size; i++) {
@@ -299,13 +292,11 @@ void immune_system::evolve(population &pop) const
 				// we sort the pop_antigens_pool according to the fitness
 				for(population::size_type i=0; i<pop_antigens_pool_size-1; i++) {
 					const population::size_type &current_idx = pop_antigens_pool.at(i);
-					const population::individual_type &current_individual = pop.get_individual(current_idx);
 
 					for(population::size_type j=i+1; j<pop_antigens_pool_size; j++) {
 						const population::size_type &current_second_idx = pop_antigens_pool.at(j);
-						const population::individual_type &current_second_individual = pop.get_individual(current_second_idx);
 
-						if(prob.compare_constraints(current_second_individual.cur_c, current_individual.cur_c)) {
+						if(prob.compare_constraints(pop_mixed_c[current_second_idx], pop_mixed_c[current_idx])) {
 							std::swap(pop_antigens_pool[i],pop_antigens_pool[j]);
 						}
 					}
@@ -316,7 +307,7 @@ void immune_system::evolve(population &pop) const
 
 				for(population::size_type i=0; i<pop_antigens_size; i++) {
 					population::size_type current_individual_idx = pop_antigens_pool.at(i);
-					pop_antigens.push_back(pop.get_individual(current_individual_idx).cur_x);
+					pop_antigens.push_back(pop_mixed.get_individual(current_individual_idx).cur_x);
 				}
 
 				// antibodies
@@ -354,7 +345,7 @@ void immune_system::evolve(population &pop) const
 			int min_individual_for_algo = 8;
 
 			population::size_type pop_antibodies_size = std::max( (int)(sigma * pop_antigens_size), min_individual_for_algo);
-			pop_antibodies_size = std::min( pop_antibodies_size, initial_pop_antibodies_pool_size);
+			pop_antibodies_size = std::min(pop_antibodies_size, initial_pop_antibodies_pool_size);
 
 			//population::size_type pop_antibodies_size = std::max((int)(0.5 * pop_antigens_size), 6);
 			//population::size_type pop_antibodies_size = std::max((int)(pop_antibodies_pool.size()), 6);
@@ -368,7 +359,7 @@ void immune_system::evolve(population &pop) const
 			pop_antibodies.clear();
 
 			for(population::size_type i=0; i<pop_antibodies_size; i++) {
-				pop_antibodies.push_back(pop.get_individual(pop_antibodies_pool.at(i)).cur_x);
+				pop_antibodies.push_back(pop_mixed.get_individual(pop_antibodies_pool.at(i)).cur_x);
 			}
 
 			// ensure that the antibodies population has at least 6 individuals for de, sga, 8 for jde...
@@ -381,10 +372,9 @@ void immune_system::evolve(population &pop) const
 				for(population::size_type i=0; i<extra_antibodies_size; i++) {
 					if(initial_pop_antibodies_pool_size > 1) {
 						int j = boost::uniform_int<int>(0, initial_pop_antibodies_pool_size - 1)(m_urng);
-
-						pop_antibodies.push_back(pop.get_individual(pop_antibodies_pool.at(j)).cur_x);
+						pop_antibodies.push_back(pop_mixed.get_individual(pop_antibodies_pool.at(j)).cur_x);
 					} else {
-						pop_antibodies.push_back(pop.get_individual(pop_antibodies_pool.at(0)).cur_x);
+						pop_antibodies.push_back(pop_mixed.get_individual(pop_antibodies_pool.at(0)).cur_x);
 					}
 				}
 			}
@@ -412,16 +402,6 @@ void immune_system::evolve(population &pop) const
 		// only one iteration should be done...
 		m_original_algo->evolve(pop_mixed);
 
-		// we update the population pop with the new population
-
-		// store the final population in the main population, just for checking the right convergence
-		pop.clear();
-		for(population::size_type i=0; i<pop_size; i++) {
-			pop.push_back(pop_mixed.get_individual(i).cur_x);
-		}
-
-		std::cout << pop.champion() << std::endl;
-
 		// Check the exit conditions (every 40 generations, just as DE)
 		if(k % 40 == 0) {
 			decision_vector tmp(prob_dimension);
@@ -436,7 +416,7 @@ void immune_system::evolve(population &pop) const
 				if (m_screen_output) {
 					std::cout << "Exit condition -- xtol < " << m_xtol << std::endl;
 				}
-				return;
+				break;
 			}
 
 			double mah = std::fabs(pop_mixed.get_individual(pop_mixed.get_worst_idx()).best_f[0] - pop_mixed.get_individual(pop_mixed.get_best_idx()).best_f[0]);
@@ -445,7 +425,7 @@ void immune_system::evolve(population &pop) const
 				if(m_screen_output) {
 					std::cout << "Exit condition -- ftol < " << m_ftol << std::endl;
 				}
-				return;
+				break;
 			}
 
 			// outputs current values
@@ -456,6 +436,12 @@ void immune_system::evolve(population &pop) const
 				std::cout << "    xtol: " << dx << ", ftol: " << mah << std::endl;
 			}
 		}
+	}
+
+	// store the final population in the main population
+	pop.clear();
+	for(population::size_type i=0; i<pop_size; i++) {
+		pop.push_back(pop_mixed.get_individual(i).cur_x);
 	}
 }
 
