@@ -61,11 +61,12 @@ namespace pagmo { namespace algorithm {
 cstrs_immune_system::cstrs_immune_system(const base &original_algo, const base &original_algo_immune, int gen,
 										 select_method_type select_method,
 										 inject_method_type inject_method,
+										 distance_method_type distance_method,
 										 double phi,
 										 double gamma,
 										 double sigma,
 										 double ftol, double xtol):
-	base(),m_gen(gen),m_select_method(select_method),m_inject_method(inject_method),
+	base(),m_gen(gen),m_select_method(select_method),m_inject_method(inject_method),m_distance_method(distance_method),
 	m_phi(phi),m_gamma(gamma),m_sigma(sigma),m_ftol(ftol),m_xtol(xtol)
 {
 	m_original_algo = original_algo.clone();
@@ -80,7 +81,7 @@ cstrs_immune_system::cstrs_immune_system(const base &original_algo, const base &
 cstrs_immune_system::cstrs_immune_system(const cstrs_immune_system &algo):
 	base(algo),m_original_algo(algo.m_original_algo->clone()),
 	m_original_algo_immune(algo.m_original_algo_immune->clone()),m_gen(algo.m_gen),
-	m_select_method(algo.m_select_method),m_inject_method(algo.m_inject_method),
+	m_select_method(algo.m_select_method),m_inject_method(algo.m_inject_method),m_distance_method(algo.m_distance_method),
 	m_phi(algo.m_phi),m_gamma(algo.m_gamma),m_sigma(algo.m_sigma),m_ftol(algo.m_ftol), m_xtol(algo.m_xtol)
 {}
 
@@ -352,7 +353,7 @@ void cstrs_immune_system::evolve(population &pop) const
 			//population::size_type pop_antibodies_size = std::max((int)(pop_antibodies_pool.size()), 6);
 
 			// the problem can be updated with antigenes, need to be done here to avoid a cast
-			problem::antibodies_problem prob_antibodies(prob, problem::antibodies_problem::EUCLIDEAN);
+			problem::antibodies_problem prob_antibodies(prob, m_distance_method);
 			prob_antibodies.set_antigens(pop_antigens);
 
 			// immune system initialization

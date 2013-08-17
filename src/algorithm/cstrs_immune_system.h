@@ -78,9 +78,17 @@ public:
 	*/
 	enum inject_method_type {CHAMPION = 0, BEST25 = 1};
 
-	cstrs_immune_system(const base & = jde(), const base & = sga(1), int gen = 1,
-						select_method_type select_method = BEST_ANTIBODY,
-						inject_method_type inject_method = CHAMPION,
+	/// Type of antibodies problem distance method.
+	/**
+	 * Two distances are implemented: the hamming and euclidean distances: HAMMING, and EUCLIDEAN.
+	*/
+	// hamming distance, euclidean distance
+	enum distance_method_type {HAMMING = 0, EUCLIDEAN = 1};
+
+	cstrs_immune_system(const base & = jde(1), const base & = sga(), int gen = 1,
+						select_method_type = BEST_ANTIBODY,
+						inject_method_type = CHAMPION,
+						distance_method_type = EUCLIDEAN,
 						double = 0.5,
 						double = 0.5,
 						double = 1./3.,
@@ -110,6 +118,7 @@ private:
 		ar & const_cast<int &>(m_gen);
 		ar & m_select_method;
 		ar & m_inject_method;
+		ar & m_distance_method;
 		ar & const_cast<double &>(m_phi);
 		ar & const_cast<double &>(m_gamma);
 		ar & const_cast<double &>(m_sigma);
@@ -123,6 +132,7 @@ private:
 	// problem associated to population penalties variables
 	select_method_type m_select_method;
 	inject_method_type m_inject_method;
+	distance_method_type m_distance_method;
 	// algorithm constants
 	const double m_phi;
 	const double m_gamma;

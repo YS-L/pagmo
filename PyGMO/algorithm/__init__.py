@@ -533,18 +533,20 @@ mbh.__init__ = _mbh_ctor
 # Renaming and placing the enums
 _algorithm.cstrs_immune_system.select_method = _algorithm._select_method_type
 _algorithm.cstrs_immune_system.inject_method = _algorithm._inject_method_type
+_algorithm.cstrs_immune_system.distance_method = _algorithm._distance_method_type
 
-def _cstrs_immune_system_ctor(self,algorithm = _algorithm.jde(), algorithm_immune = _algorithm.jde(), gen = 1, select_method = cstrs_immune_system.select_method.BEST_ANTIBODY, inject_method = cstrs_immune_system.inject_method.CHAMPION, phi = 0.5, gamma = 0.5, sigma = 1./3., f_tol = 1e-15, x_tol = 1e-15):
+def _cstrs_immune_system_ctor(self,algorithm = _algorithm.jde(), algorithm_immune = _algorithm.jde(), gen = 1, select_method = cstrs_immune_system.select_method.BEST_ANTIBODY, inject_method = cstrs_immune_system.inject_method.CHAMPION, distance_method = cstrs_immune_system.distance_method.EUCLIDEAN, phi = 0.5, gamma = 0.5, sigma = 1./3., f_tol = 1e-15, x_tol = 1e-15):
 	"""
     Constructs an immune system constraints handling algorithm.
 	
-	USAGE: algorithm._cstrs_immune_system(algorithm = _algorithm.jde(), algorithm_2 = _algorithm.jde(), select_method = cstrs_immune_system.select_method.BEST_ANTIBODY, inject_method = cstrs_immune_system.inject_method.CHAMPION, phi = 0.5, gamma = 0.5, sigma = 1./3., ftol = 1e-15, xtol = 1e-15);
+	USAGE: algorithm._cstrs_immune_system(algorithm = _algorithm.jde(), algorithm_2 = _algorithm.jde(), select_method = cstrs_immune_system.select_method.BEST_ANTIBODY, inject_method = cstrs_immune_system.inject_method.CHAMPION, distance_method = cstrs_immune_system.distance_method.EUCLIDEAN, phi = 0.5, gamma = 0.5, sigma = 1./3., ftol = 1e-15, xtol = 1e-15);
     *
 	* algorithm: optimizer to use as 'original' optimization method. Its number of generations should be set to 1.
 	* algorithm_2: optimizer to use as 'original' optimization method for the immune system.
     * gen: number of generations.
     * select_method: cstrs_immune_system.select_method.BEST_ANTIBODY by default, the method used for selecting the antibodies.
     * inject_method: cstrs_immune_system.inject_method.CHAMPION by default, the method used for reinjecting the antibodies.
+    * distance_method: cstrs_immune_system.distance_method.EUCLIDEAN by default, the method used for computing the distance to the antigenes population.
     * Two possibilities are available: CHAMPION, and BEST25.
     * phi: 0.5 by default. The feasible fraction selection to compute the mean value.
 	* gamma: 0.5 by default. The number of antigens selected / number of total antigens.
@@ -558,6 +560,7 @@ def _cstrs_immune_system_ctor(self,algorithm = _algorithm.jde(), algorithm_immun
 	arg_list.append(gen)
 	arg_list.append(select_method)
 	arg_list.append(inject_method)
+	arg_list.append(distance_method)
 	arg_list.append(phi)
 	arg_list.append(gamma)
 	arg_list.append(sigma)

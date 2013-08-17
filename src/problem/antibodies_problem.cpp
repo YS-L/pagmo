@@ -42,7 +42,7 @@ namespace pagmo { namespace problem {
  * @param[in] method method_type to used for the distance computation.
  * Two posssibililties are available: HAMMING, EUCLIDEAN.
  */
-antibodies_problem::antibodies_problem(const base &problem, const method_type method):
+antibodies_problem::antibodies_problem(const base &problem, const algorithm::cstrs_immune_system::distance_method_type method):
 	base((int)problem.get_dimension(),
 		 problem.get_i_dimension(),
 		 problem.get_f_dimension(),
@@ -153,7 +153,7 @@ double antibodies_problem::compute_distance(const decision_vector &x) const {
 	// hamming distance
 
 	switch(m_method) {
-	case(HAMMING): {
+	case(algorithm::cstrs_immune_system::HAMMING): {
 		const decision_vector &lb = get_lb();
 		const decision_vector &ub = get_ub();
 
@@ -177,7 +177,7 @@ double antibodies_problem::compute_distance(const decision_vector &x) const {
 		distance = - distance;
 		break;
 	}
-	case(EUCLIDEAN): {
+	case(algorithm::cstrs_immune_system::EUCLIDEAN): {
 		for(decision_vector::size_type j=0; j<m_pop_antigens.size(); j++) {
 
 			double euclid = 0.;

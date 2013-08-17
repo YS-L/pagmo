@@ -121,6 +121,20 @@ inline class_<algorithm::mbh,bases<algorithm::base> > algorithm_wrapper(const ch
 	return retval;
 }
 
+template <>
+inline class_<algorithm::cstrs_immune_system,bases<algorithm::base> > algorithm_wrapper(const char *name, const char *descr)
+{
+	class_<algorithm::cstrs_immune_system,bases<algorithm::base> > retval(name,descr,init<const algorithm::cstrs_immune_system &>());
+	retval.def(init<>());
+	retval.def("__copy__", &Py_copy_from_ctor<algorithm::cstrs_immune_system>);
+	retval.def("__deepcopy__", &Py_deepcopy_from_ctor<algorithm::cstrs_immune_system>);
+	retval.def("evolve", &evolve_copy);
+	retval.def_pickle(meta_algorithm_pickle_suite<algorithm::cstrs_immune_system>());
+	retval.def("cpp_loads", &py_cpp_loads<algorithm::cstrs_immune_system>);
+	retval.def("cpp_dumps", &py_cpp_dumps<algorithm::cstrs_immune_system>);
+	return retval;
+}
+
 BOOST_PYTHON_MODULE(_algorithm) {
 	common_module_init();
 
@@ -157,7 +171,12 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	enum_<algorithm::cstrs_immune_system::inject_method_type>("_inject_method_type")
 		.value("CHAMPION", algorithm::cstrs_immune_system::CHAMPION)
 		.value("BEST25", algorithm::cstrs_immune_system::BEST25);
-		
+
+	// Antibodies Problems (for immune system).
+	enum_<algorithm::cstrs_immune_system::distance_method_type>("_distance_method_type")
+		.value("HAMMING", algorithm::cstrs_immune_system::HAMMING)
+		.value("EUCLIDEAN", algorithm::cstrs_immune_system::EUCLIDEAN);
+
 	// Expose algorithms.
 
 	// Null.
@@ -183,7 +202,6 @@ BOOST_PYTHON_MODULE(_algorithm) {
 		.add_property("ftol",&algorithm::cmaes::get_ftol,&algorithm::cmaes::set_ftol)
 		.add_property("xtol",&algorithm::cmaes::get_xtol,&algorithm::cmaes::set_xtol);
 
-
 	// Monte-carlo.
 	algorithm_wrapper<algorithm::monte_carlo>("monte_carlo","Monte-Carlo search.")
 		.def(init<int>());
@@ -208,7 +226,7 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	
 	// Constraints immune system.
 	algorithm_wrapper<algorithm::cstrs_immune_system>("cstrs_immune_system","Constraints immune system.")
-		.def(init<optional<const algorithm::base &,const algorithm::base &,int,algorithm::cstrs_immune_system::select_method_type,algorithm::cstrs_immune_system::inject_method_type,double,double,double,double,double> >())
+		.def(init<optional<const algorithm::base &,const algorithm::base &,int,algorithm::cstrs_immune_system::select_method_type,algorithm::cstrs_immune_system::inject_method_type,algorithm::cstrs_immune_system::distance_method_type,double,double,double,double,double> >())
 		.add_property("algorithm",&algorithm::cstrs_immune_system::get_algorithm,&algorithm::cstrs_immune_system::set_algorithm)
 		.add_property("algorithm_immune",&algorithm::cstrs_immune_system::get_algorithm_immune,&algorithm::cstrs_immune_system::set_algorithm_immune);
 	

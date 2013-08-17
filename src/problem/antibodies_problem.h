@@ -33,6 +33,7 @@
 #include "../types.h"
 #include "cec2006.h"
 #include "base.h"
+#include "../algorithm/cstrs_immune_system.h"
 
 namespace pagmo{ namespace problem {
 
@@ -52,13 +53,13 @@ namespace pagmo{ namespace problem {
  */
 class __PAGMO_VISIBLE antibodies_problem : public base
 {
-public:
-	// hamming distance, euclidean distance
-	enum method_type {HAMMING = 0, EUCLIDEAN = 1};
+//public:
+//	// hamming distance, euclidean distance
+//	enum method_type {HAMMING = 0, EUCLIDEAN = 1};
 
 public:
 	//constructors
-	antibodies_problem(const base & = cec2006(4), const method_type = HAMMING);
+	antibodies_problem(const base & = cec2006(4), const algorithm::cstrs_immune_system::distance_method_type = algorithm::cstrs_immune_system::HAMMING);
 
 	//copy constructor
 	antibodies_problem(const antibodies_problem &);
@@ -80,7 +81,7 @@ private:
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_problem;
 		ar & m_pop_antigens;
-		ar & const_cast<method_type &>(m_method);
+		ar & const_cast<algorithm::cstrs_immune_system::distance_method_type &>(m_method);
 		ar & m_bit_encoding;
 		ar & m_max_encoding_integer;
 	}
@@ -88,7 +89,7 @@ private:
 	base_ptr m_original_problem;
 	std::vector<decision_vector> m_pop_antigens;
 
-	const method_type m_method;
+	const algorithm::cstrs_immune_system::distance_method_type m_method;
 
 	// encoding size
 	int m_max_encoding_integer;
