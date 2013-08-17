@@ -148,6 +148,15 @@ BOOST_PYTHON_MODULE(_algorithm) {
 	enum_<algorithm::sga::selection::type>("_selection_type")
 		.value("BEST20", algorithm::sga::selection::BEST20)
 		.value("ROULETTE", algorithm::sga::selection::ROULETTE);
+	
+	// Constraints immune system enums
+	enum_<algorithm::cstrs_immune_system::select_method_type>("_select_method_type")
+		.value("BEST_ANTIBODY", algorithm::cstrs_immune_system::BEST_ANTIBODY)
+		.value("INFEASIBILITY", algorithm::cstrs_immune_system::INFEASIBILITY);
+
+	enum_<algorithm::cstrs_immune_system::inject_method_type>("_inject_method_type")
+		.value("CHAMPION", algorithm::cstrs_immune_system::CHAMPION)
+		.value("BEST25", algorithm::cstrs_immune_system::BEST25);
 		
 	// Expose algorithms.
 
@@ -196,6 +205,12 @@ BOOST_PYTHON_MODULE(_algorithm) {
 		.def(init<optional<const algorithm::base &,int, double> >())
 		.def(init<optional<const algorithm::base &,int, const std::vector<double> &> >())
 		.add_property("algorithm",&algorithm::mbh::get_algorithm,&algorithm::mbh::set_algorithm);
+	
+	// Constraints immune system.
+	algorithm_wrapper<algorithm::cstrs_immune_system>("cstrs_immune_system","Constraints immune system.")
+		.def(init<optional<const algorithm::base &,const algorithm::base &,int,algorithm::cstrs_immune_system::select_method_type,algorithm::cstrs_immune_system::inject_method_type,double,double,double,double,double> >())
+		.add_property("algorithm",&algorithm::cstrs_immune_system::get_algorithm,&algorithm::cstrs_immune_system::set_algorithm)
+		.add_property("algorithm_immune",&algorithm::cstrs_immune_system::get_algorithm_immune,&algorithm::cstrs_immune_system::set_algorithm_immune);
 	
 	// Multistart.
 	algorithm_wrapper<algorithm::ms>("ms","Multistart.")

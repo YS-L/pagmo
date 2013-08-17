@@ -28,16 +28,16 @@
 #include "../exceptions.h"
 #include "../types.h"
 #include "base.h"
-#include "unconstrain.h"
+#include "con2uncon.h"
 
 namespace pagmo { namespace problem {
 
 /**
  * Constructor using initial constrained problem
  *
- * @param[in] problem base::problem to be unconstrained
+ * @param[in] problem base::problem to be con2unconed
  */
-unconstrain::unconstrain(const base &problem):
+con2uncon::con2uncon(const base &problem):
 	base((int)problem.get_dimension(),
 		 problem.get_i_dimension(),
 		 problem.get_f_dimension(),
@@ -50,7 +50,7 @@ unconstrain::unconstrain(const base &problem):
 }
 
 /// Copy Constructor. Performs a deep copy
-unconstrain::unconstrain(const unconstrain &prob):
+con2uncon::con2uncon(const con2uncon &prob):
 	base((int)prob.get_dimension(),
 		 prob.get_i_dimension(),
 		 prob.get_f_dimension(),
@@ -63,14 +63,14 @@ unconstrain::unconstrain(const unconstrain &prob):
 }
 
 /// Clone method.
-base_ptr unconstrain::clone() const
+base_ptr con2uncon::clone() const
 {
-	return base_ptr(new unconstrain(*this));
+	return base_ptr(new con2uncon(*this));
 }
 
 /// Implementation of the objective functions.
 /// (Wraps over the original implementation)
-void unconstrain::objfun_impl(fitness_vector &f, const decision_vector &x) const
+void con2uncon::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
 	m_original_problem->objfun(f,x);
 }
@@ -80,7 +80,7 @@ void unconstrain::objfun_impl(fitness_vector &f, const decision_vector &x) const
  * @brief compare_fitness_impl calls the compare_fitness method of the original problem.
  * @return true if v_f1 is dominating v_f2, false otherwise.
  */
-bool unconstrain::compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const
+bool con2uncon::compare_fitness_impl(const fitness_vector &v_f1, const fitness_vector &v_f2) const
 {
 	return m_original_problem->compare_fitness(v_f1,v_f2);
 }
@@ -89,21 +89,21 @@ bool unconstrain::compare_fitness_impl(const fitness_vector &v_f1, const fitness
 /**
  * Will return a formatted string containing the type of constraint handling
  */
-std::string unconstrain::human_readable_extra() const
+std::string con2uncon::human_readable_extra() const
 {
 	std::ostringstream oss;
 	oss << m_original_problem->human_readable_extra() << std::endl;
-	oss << "\n\tUnconstrained ";
+	oss << "\n\tcon2unconed ";
 	oss << std::endl;
 	return oss.str();
 }
 
-std::string unconstrain::get_name() const
+std::string con2uncon::get_name() const
 {
-	return m_original_problem->get_name() + " [unconstrain]";
+	return m_original_problem->get_name() + " [con2uncon]";
 }
 
 }}
 
-BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::problem::unconstrain);
+BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::problem::con2uncon);
 

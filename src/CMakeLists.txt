@@ -26,7 +26,7 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/mbh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/ms.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/pade.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/immune_system.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/algorithm/cstrs_immune_system.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/base.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/base_r_policy.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/migration/base_s_policy.cpp
@@ -90,7 +90,7 @@ SET(PAGMO_LIB_SRC_LIST
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/decompose.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/noisy.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/problem/robust.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/problem/unconstrain.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/problem/con2uncon.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/barabasi_albert.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/clustered_ba.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/topology/ageing_clustered_ba.cpp

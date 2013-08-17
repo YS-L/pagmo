@@ -81,7 +81,7 @@
 #include "problem/decompose.h"
 #include "problem/noisy.h"
 #include "problem/robust.h"
-#include "problem/unconstrain.h"
+#include "problem/con2uncon.h"
 
 // GSL problems.
 #ifdef PAGMO_ENABLE_GSL

@@ -39,9 +39,12 @@ int main()
 
 	pagmo::algorithm::de algo(1, 0.8, 0.9, 2, 1e-15, 1e-15);
 	pagmo::algorithm::de algo_2(70, 0.8, 0.9, 2, 1e-15, 1e-15);
+//	pagmo::algorithm::cmaes algo(1);
+//	pagmo::algorithm::cmaes algo_2(70);
 
-	pagmo::algorithm::immune_system algo_constrained(algo, algo_2, 5000,
-													 pagmo::algorithm::immune_system::INFEASIBILITY);
+	pagmo::algorithm::cstrs_immune_system algo_constrained(algo, algo_2, 5000,
+														   pagmo::algorithm::cstrs_immune_system::INFEASIBILITY,
+														   pagmo::algorithm::cstrs_immune_system::CHAMPION);
 	algo_constrained.reset_rngs(100);
 
 	std::cout << algo_constrained;

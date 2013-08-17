@@ -33,23 +33,23 @@
 #include "../types.h"
 #include "cec2006.h"
 #include "base.h"
-#include "../algorithm/immune_system.h"
 
 namespace pagmo{ namespace problem {
 
-/// Constrainted co evolution meta-problem
+/// Antibodies meta-problem
 /**
- * Implements a meta-problem class that wraps some other constrained problems,
- * resulting in self adaptive constraints handling.
+ * Implements a meta-problem class that simulates the immune system. The objective
+ * function computes the distance to the given antigenes either by using the
+ * HAMMING or EUCLIDEAN distance. The original problem is needed to set up the
+ * boundaries necessary for the HAMMING distance.
  *
- * The key idea of this constraint handling technique is to .
- *
- * @see R., & Wright, J. A. (2003). Self-adaptive fitness formulation for constrained optimization.
- * Evolutionary Computation, IEEE Transactions on, 7(5), 445-455 for the paper introducing the method.
+ * @see Hajela, P., & Lee, J. (1996). Constrained genetic search via schema adaptation: an immune
+ * network solution. Structural optimization, 12(1), 11-15.
+ * @see Coello, C. A. C., Cortés, N. C., San, C., & Zacatenco, P. (2001). Use of emulations of
+ * the immune system to handle constraints in evolutionary algorithms.
  *
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */
-
 class __PAGMO_VISIBLE antibodies_problem : public base
 {
 public:

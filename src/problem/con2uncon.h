@@ -22,8 +22,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_PROBLEM_UNCONSTRAIN_H
-#define PAGMO_PROBLEM_UNCONSTRAIN_H
+#ifndef PAGMO_PROBLEM_CON2UNCON_H
+#define PAGMO_PROBLEM_CON2UNCON_H
 
 #include <string>
 
@@ -42,14 +42,14 @@ namespace pagmo{ namespace problem {
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */
 
-class __PAGMO_VISIBLE unconstrain : public base
+class __PAGMO_VISIBLE con2uncon : public base
 {
 public:
 	//constructors
-	unconstrain(const base & = cec2006(4));
+	con2uncon(const base & = cec2006(4));
 
 	//copy constructor
-	unconstrain(const unconstrain &);
+	con2uncon(const con2uncon &);
 	base_ptr clone() const;
 	std::string get_name() const;
 
@@ -71,6 +71,6 @@ private:
 
 }} //namespaces
 
-BOOST_CLASS_EXPORT_KEY(pagmo::problem::unconstrain);
+BOOST_CLASS_EXPORT_KEY(pagmo::problem::con2uncon);
 
-#endif // PAGMO_PROBLEM_unconstrain_H
+#endif // PAGMO_PROBLEM_con2uncon_H

@@ -33,22 +33,14 @@
 
 namespace pagmo { namespace problem {
 /**
- * Constructor of co-evolution problem using initial constrained problem
+ * Constructor of antibodies meta-problem
  *
  * Note: This problem is not intended to be used by itself. Instead use the
- * co-evolution algorithm if you want to solve constrained problems.
+ * cstrs_immune_system algorithm if you want to solve constrained problems.
  *
- * @param[in] problem base::problem to be modified to use a co-evolution
- * as constraints handling technique.
- * @param[in] method method_type to used for the co-evolution constraints
- * handling technique. Three posssibililties are available: SIMPLE,
- * SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS. The simple one is the original
- * version of the Coello/He implementation. The SPLIT_NEQ_EQ, splits the
- * equalities and inequalities constraints in two different sets for the
- * penalty weigths, containing respectively inequalities and equalities
- * weigths. The SPLIT_CONSTRAINTS splits the constraints in M set of weigths
- * with M the number of constraints.
- *
+ * @param[in] problem base::problem to be used to set up the boundaries
+ * @param[in] method method_type to used for the distance computation.
+ * Two posssibililties are available: HAMMING, EUCLIDEAN.
  */
 antibodies_problem::antibodies_problem(const base &problem, const method_type method):
 	base((int)problem.get_dimension(),
@@ -71,8 +63,6 @@ antibodies_problem::antibodies_problem(const base &problem, const method_type me
 	}
 
 	set_bounds(m_original_problem->get_lb(),m_original_problem->get_ub());
-
-//	std::fill(m_pop_antigens.begin(),m_pop_antigens.end(), decision_vector;
 
 	// encoding for hamming distance
 	m_bit_encoding = 25;
@@ -105,8 +95,7 @@ base_ptr antibodies_problem::clone() const
 /// Implementation of the objective function.
 /// (Wraps over the original implementation)
 /**
- *  Returns the penalized fitness if the decision vector penalize with the penalty
- *  coefficient given.
+ *  Returns the distance of the given decision_vector to the antigenes population.
  */
 void antibodies_problem::objfun_impl(fitness_vector &f, const decision_vector &x) const
 {
@@ -132,7 +121,7 @@ std::string antibodies_problem::human_readable_extra() const
 {
 	std::ostringstream oss;
 	oss << m_original_problem->human_readable_extra() << std::endl;
-	oss << "\n\tConstraints handled with antibodies method ";
+	oss << "\n\tWith antibodies method";
 	oss << std::endl;
 	return oss.str();
 }

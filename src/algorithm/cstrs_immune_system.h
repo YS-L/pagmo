@@ -22,8 +22,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.               *
  *****************************************************************************/
 
-#ifndef PAGMO_ALGORITHM_IMMUNE_SYSTEM_H
-#define PAGMO_ALGORITHM_IMMUNE_SYSTEM_H
+#ifndef PAGMO_ALGORITHM_CSTRS_IMMUNE_SYSTEM_H
+#define PAGMO_ALGORITHM_CSTRS_IMMUNE_SYSTEM_H
 
 #include <string>
 
@@ -36,45 +36,56 @@
 
 namespace pagmo { namespace algorithm {
 
-/// Co-Evolution constraints handling meta-algorithm
+/// Immune system constraints handling meta-algorithm
 /**
  *
- * Co-Evolution constraints handling is a meta-algorithm that allow
- * to solve constrained optimization problems. The key idea of this constraint
- * handling technique is to use two different populations that evolves the one after the
- * other. The first one has an objective function penalized with constraints. The penalty
- * coefficients are encoded in the population 2 which evolves depending on the average
- * population 1 fitness.
+ * Immune constraints handling is a meta-algorithm that allow to solve constrained optimization
+ * problems. The key idea of this constraint handling technique is to simulate an immune system
+ * to drive the unfeasible individuals (called antibodies) towards the feasible individuals
+ * (called the antigens).
  *
- * This meta-algorithm is based on the problems immune_system and immune_system_2.
+ * This meta-algorithm is based on the problem antibodies_problem.
  *
- * Note: This constraints handling technique can only be used for <b>MINIMIZATION</b> problems.
- *
- * @see Coello Coello, C. A. (2000). Use of a self-adaptive penalty approach for engineering optimization problems.
- * Computers in Industry, 41(2), 113-127.
- * @see Qie He and Ling Wang. 2007. An effective co-evolutionary particle swarm optimization for constrained engineering design problems.
- * Eng. Appl. Artif. Intell. 20, 1 (February 2007), 89-99.
- * DOI=10.1016/j.engappai.2006.03.003 http://dx.doi.org/10.1016/j.engappai.2006.03.003
+ * @see Hajela, P., & Lee, J. (1996). Constrained genetic search via schema adaptation: an immune
+ * network solution. Structural optimization, 12(1), 11-15.
+ * @see Coello, C. A. C., Cortés, N. C., San, C., & Zacatenco, P. (2001). Use of emulations of
+ * the immune system to handle constraints in evolutionary algorithms.
  *
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */
 		
-class __PAGMO_VISIBLE immune_system: public base
+class __PAGMO_VISIBLE cstrs_immune_system: public base
 {
 public:
-	/// Type of co-evolution.
+	/// Type of immune system antibody selection method.
 	/**
-	* Definition of three types of co-evolution: SIMPLE, SPLIT_NEQ_EQ and SPLIT_CONSTRAINTS.
-	* The SIMPLE, is co-evolution defined by COELLO. The SPLIT_NEQ_EQ, splits equalities and
-	* inequalities constraints (4 penalty coefficients). The SPLIT_CONSTRAINTS split the
-	* number of coefficients upon the number of penalty coefficients (2 * c_dimension).
+	* Definition of two types of antibody selections method: BEST_ANTIBODY, and INFEASIBILITY.
+	* The BEST_ANTIBODY, is the selection defined by COELLO, where only the antigen population
+	* contains only one antigen which is the individual with lowest constraints violation.
+	* INFEASIBILITY is an extension where the antigen population contain selected individuals
+	* based on their infeasibility.
 	*/
-	// co-evolution simple, split_neq_eq, split_constraints
-	enum method_type {BEST_ANTIBODY = 0, INFEASIBILITY = 1};
+	// Immune system antibody selection method: best antibody, infeasibility
+	enum select_method_type {BEST_ANTIBODY = 0, INFEASIBILITY = 1};
 
-	immune_system(const base & = jde(), const base & = sga(1), int gen = 1,
-					   method_type method = BEST_ANTIBODY, double = 1e-15, double = 1e-15);
-	immune_system(const immune_system &);
+	/// Type of immune system antibody injection method.
+	/**
+	* Definition of two types of antibody injections method: CHAMPION, and BEST25.
+	* The CHAMPION method reinject the best antibody after the immune system simulation
+	* into the main population.
+	* The BEST25 method reinject the best 25% antibody after the immune system simulation
+	* into the main population.
+	*/
+	enum inject_method_type {CHAMPION = 0, BEST25 = 1};
+
+	cstrs_immune_system(const base & = jde(), const base & = sga(1), int gen = 1,
+						select_method_type select_method = BEST_ANTIBODY,
+						inject_method_type inject_method = CHAMPION,
+						double = 0.5,
+						double = 0.5,
+						double = 1./3.,
+						double = 1e-15, double = 1e-15);
+	cstrs_immune_system(const cstrs_immune_system &);
 	base_ptr clone() const;
 
 public:
@@ -82,6 +93,8 @@ public:
 	std::string get_name() const;
 	base_ptr get_algorithm() const;
 	void set_algorithm(const base &);
+	base_ptr get_algorithm_immune() const;
+	void set_algorithm_immune(const base &);
 
 protected:
 	std::string human_readable_extra() const;
@@ -95,7 +108,11 @@ private:
 		ar & m_original_algo;
 		ar & m_original_algo_immune;
 		ar & const_cast<int &>(m_gen);
-		ar & m_method;
+		ar & m_select_method;
+		ar & m_inject_method;
+		ar & const_cast<double &>(m_phi);
+		ar & const_cast<double &>(m_gamma);
+		ar & const_cast<double &>(m_sigma);
 		ar & const_cast<double &>(m_ftol);
 		ar & const_cast<double &>(m_xtol);
 	}
@@ -104,18 +121,19 @@ private:
 	//Number of generations
 	const int m_gen;
 	// problem associated to population penalties variables
-	method_type m_method;
+	select_method_type m_select_method;
+	inject_method_type m_inject_method;
+	// algorithm constants
+	const double m_phi;
+	const double m_gamma;
+	const double m_sigma;
 	// tolerance
 	const double m_ftol;
 	const double m_xtol;
-
-private:
-	double compute_solution_infeasibility(const constraint_vector &, const constraint_vector &, const problem::base &) const;
-
 };
 
 }} //namespaces
 
-BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::immune_system);
+BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::cstrs_immune_system);
 
-#endif // PAGMO_ALGORITHM_immune_system_H
+#endif // PAGMO_ALGORITHM_CSTRS_IMMUNE_SYSTEM_H
