@@ -20,3 +20,6 @@ ENDIF(ENABLE_GSL)
 
 #ADD_EXECUTABLE(constraints_handling constraints_handling.cpp)
 #TARGET_LINK_LIBRARIES(constraints_handling ${MANDATORY_LIBRARIES} pagmo_static)
+
+ADD_EXECUTABLE(cstrs_immune_system cstrs_immune_system.cpp)
+TARGET_LINK_LIBRARIES(cstrs_immune_system ${MANDATORY_LIBRARIES} pagmo_static)
