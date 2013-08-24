@@ -43,6 +43,13 @@
 #include "util/racing.h"
 #include "util/race_pop.h"
 
+#include "algorithm/base.h"
+#include "problem/con2uncon.h"
+#ifdef PAGMO_ENABLE_GSL
+#include "algorithm/base_gsl.h"
+#include "algorithm/gsl_nm2.h"
+#endif
+
 namespace pagmo
 {
 
@@ -776,6 +783,42 @@ std::vector<population::size_type> population::get_best_idx(const population::si
 	return retval;
 }
 
+/// Repairs the individual i.
+/**
+ * This methods repairs an infeasible individual to make it feasible. The method uses the simplex
+ * optimization algorithm if the GSL library is available. It minimizes the constraints violation.
+ *
+ * @throws value_error if N is larger than the population size or the population is empty
+ */
+void population::repair(const population::size_type &idx, const int &iter, const double &tolerance, const double &step_size)
+{
+
+#ifndef PAGMO_ENABLE_GSL
+	pagmo_throw(assertion_error,"The GSL library is not available, thus the repair method can't be used.");
+#endif
+
+	if (idx >= size()) {
+		pagmo_throw(index_error,"invalid individual position");
+	}
+
+	const decision_vector &current_x = m_container[idx].cur_x;
+
+	// if feasible, nothing is done
+	if(m_prob->feasibility_x(current_x)) {
+		return;
+	}
+
+	problem::con2uncon feasibility_problem(*m_prob,problem::con2uncon::FEASIBILITY);
+
+	population pop_repair(feasibility_problem);
+	pop_repair.clear();
+	pop_repair.push_back(current_x);
+
+	pagmo::algorithm::gsl_nm2 simplex_algo(iter,tolerance,step_size);
+	simplex_algo.evolve(pop_repair);
+
+	this->set_x(idx,pop_repair.get_individual(0).cur_x);
+}
 
 /// Return terse human-readable representation.
 /**

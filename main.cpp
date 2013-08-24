@@ -32,19 +32,16 @@ using namespace pagmo;
 
 int main()
 {
-	pagmo::problem::cec2006 prob_constrained(4);
+	pagmo::problem::cec2006 prob_constrained(5);
 	//pagmo::problem::welded_beam prob_constrained;
 	//pagmo::problem::tens_comp_string prob_constrained;
 	//pagmo::problem::pressure_vessel prob_constrained;
 
 	pagmo::algorithm::de algo(1, 0.8, 0.9, 2, 1e-15, 1e-15);
-	pagmo::algorithm::de algo_2(70, 0.8, 0.9, 2, 1e-15, 1e-15);
 //	pagmo::algorithm::cmaes algo(1);
 //	pagmo::algorithm::cmaes algo_2(70);
 
-	pagmo::algorithm::cstrs_immune_system algo_constrained(algo, algo_2, 5000,
-														   pagmo::algorithm::cstrs_immune_system::INFEASIBILITY,
-														   pagmo::algorithm::cstrs_immune_system::CHAMPION);
+	pagmo::algorithm::cstrs_core algo_constrained(algo, 1000);
 	algo_constrained.reset_rngs(100);
 
 	std::cout << algo_constrained;
@@ -52,13 +49,23 @@ int main()
 	for (size_t i=0; i<1; ++i) {
 		pagmo::population pop(prob_constrained,90);
 		pagmo::population pop_copy = pop;
+
+//		std::cout << "---------------BEFORE------------" << std::endl;
+//		std::cout << pop.get_individual(0);
+//		std::cout << "---------------------------------" << std::endl;
+//		pop.repair(0);
+//		std::cout << "---------------AFTER-------------" << std::endl;
+//		std::cout << pop.get_individual(0);
+//		std::cout << "---------------------------------" << std::endl;
+
 		algo_constrained.evolve(pop);
+		std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"<<std::endl;
 		std::cout<<"CHAMPION1"<<std::endl;
 		std::cout << pop.champion();
 		std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"<<std::endl;
-		algo_constrained.evolve(pop_copy);
-		std::cout<<"CHAMPION2"<<std::endl;
-		std::cout << pop_copy.champion();
+//		algo_constrained.evolve(pop_copy);
+//		std::cout<<"CHAMPION2"<<std::endl;
+//		std::cout << pop_copy.champion();
 	}
 
 	std::cout << algo_constrained << std::endl;
