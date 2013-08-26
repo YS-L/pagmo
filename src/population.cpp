@@ -783,12 +783,18 @@ std::vector<population::size_type> population::get_best_idx(const population::si
 	return retval;
 }
 
-/// Repairs the individual i.
+/// Repairs the individual at the position idx.
 /**
  * This methods repairs an infeasible individual to make it feasible. The method uses the simplex
  * optimization algorithm if the GSL library is available. It minimizes the constraints violation.
  *
- * @throws value_error if N is larger than the population size or the population is empty
+ * @param[in] idx index of the individual to repair
+ * @param[in] iter number of iterations to do for the repairing algorithm
+ * @param[in] tolerance tolerance stop criterion for the repairing algorithm
+ * @param[in] step_size step size for the repairing algorithm
+ *
+ * @throws index_error if idx is larger than the population size
+ * @throws assertion_error if the GSL library is not available
  */
 void population::repair(const population::size_type &idx, const int &iter, const double &tolerance, const double &step_size)
 {
@@ -802,9 +808,10 @@ void population::repair(const population::size_type &idx, const int &iter, const
 	}
 
 	const decision_vector &current_x = m_container[idx].cur_x;
+	const constraint_vector &current_c = m_container[idx].cur_c;
 
 	// if feasible, nothing is done
-	if(m_prob->feasibility_x(current_x)) {
+	if(m_prob->feasibility_c(current_c)) {
 		return;
 	}
 

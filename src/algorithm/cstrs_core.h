@@ -61,6 +61,8 @@ public:
 			   int = 100,
 			   double = 1e-5,
 			   double = 0.02,
+			   int = 10,
+			   double = 1.,
 			   double = 1e-15, double = 1e-15);
 	cstrs_core(const cstrs_core &);
 	base_ptr clone() const;
@@ -82,9 +84,11 @@ private:
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_algo;
 		ar & const_cast<int &>(m_gen);
-		ar & const_cast<int &>(m_repair_iter);
+		ar & const_cast<int &>(m_repair_gen);
 		ar & const_cast<double &>(m_repair_tolerance);
 		ar & const_cast<double &>(m_repair_step_size);
+		ar & const_cast<int &>(m_repair_frequency);
+		ar & const_cast<double &>(m_repair_ratio);
 		ar & const_cast<double &>(m_ftol);
 		ar & const_cast<double &>(m_xtol);
 	}
@@ -92,9 +96,11 @@ private:
 	//Number of generations
 	const int m_gen;
 	// repair constants
-	const int m_repair_iter;
+	const int m_repair_gen;
 	const double m_repair_tolerance;
 	const double m_repair_step_size;
+	const int m_repair_frequency;
+	const double m_repair_ratio;
 
 	// tolerance
 	const double m_ftol;

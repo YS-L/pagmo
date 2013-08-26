@@ -37,7 +37,7 @@ int main()
 	//pagmo::problem::tens_comp_string prob_constrained;
 	//pagmo::problem::pressure_vessel prob_constrained;
 
-	pagmo::algorithm::de algo(1, 0.8, 0.9, 2, 1e-15, 1e-15);
+	pagmo::algorithm::de algo(10, 0.8, 0.9, 2, 1e-15, 1e-15);
 //	pagmo::algorithm::cmaes algo(1);
 //	pagmo::algorithm::cmaes algo_2(70);
 

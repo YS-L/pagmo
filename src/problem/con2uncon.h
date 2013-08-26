@@ -37,7 +37,10 @@ namespace pagmo{ namespace problem {
 /// Constrained to unconstrained meta-problem
 /**
  * Implements a meta-problem class that wraps some other constrained problems,
- * resulting in unconstrained problem by simply removing the constraints.
+ * resulting in unconstrained problem by removing the constraints. Two methods
+ * are available for the objective function: OPTIMALITY and FEASIBILITY.
+ * The OPTIMALITY uses the objective function of the original problem. The
+ * FEASIBILITY computes the sum of the constraints.
  *
  * @author Jeremie Labroquere (jeremie.labroquere@gmail.com)
  */

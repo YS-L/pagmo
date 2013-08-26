@@ -44,6 +44,7 @@ Multistart (MS)                    :class:`PyGMO.algorithm.ms`                  
 Penalty Function (PF)                                                                           Planned 
 Augmented Lagrangian (AL)          :class:`PyGMO.algorithm.nlopt_auglag`          C-C-S         Requires PyGMO to be compiled with nlopt option. Minimization assumed
 Augmented Lagrangian (AL)          :class:`PyGMO.algorithm.nlopt_auglag_eq`       C-C-S         Requires PyGMO to be compiled with nlopt option. Minimization assumed
+CORE                               :class:`PyGMO.algorithm.cstrs_core`            C-C-S         CORE constraints handling technique (repairing technique)
 Immune System                      :class:`PyGMO.algorithm.cstrs_immune_system`   C-C-S         Immune system constraints handling technique
 ================================== ============================================ =============== ===========================================
 
@@ -183,6 +184,14 @@ Detailed Documentation
    .. automethod:: PyGMO.algorithm.cstrs_immune_system.__init__
 
    .. attribute:: PyGMO.algorithm.cstrs_immune_system.screen_output
+
+      When True, the algorithms produces output on screen 
+
+.. autoclass:: PyGMO.algorithm.cstrs_core
+
+   .. automethod:: PyGMO.algorithm.cstrs_core.__init__
+
+   .. attribute:: PyGMO.algorithm.cstrs_core.screen_output
 
       When True, the algorithms produces output on screen 
 

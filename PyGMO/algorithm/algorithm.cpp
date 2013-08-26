@@ -229,6 +229,11 @@ BOOST_PYTHON_MODULE(_algorithm) {
 		.def(init<optional<const algorithm::base &,const algorithm::base &,int,algorithm::cstrs_immune_system::select_method_type,algorithm::cstrs_immune_system::inject_method_type,algorithm::cstrs_immune_system::distance_method_type,double,double,double,double,double> >())
 		.add_property("algorithm",&algorithm::cstrs_immune_system::get_algorithm,&algorithm::cstrs_immune_system::set_algorithm)
 		.add_property("algorithm_immune",&algorithm::cstrs_immune_system::get_algorithm_immune,&algorithm::cstrs_immune_system::set_algorithm_immune);
+
+	// Constraints CORE.
+	algorithm_wrapper<algorithm::cstrs_core>("cstrs_core","Constraints core.")
+		.def(init<optional<const algorithm::base &,int,int,double,double,int,double,double,double> >())
+		.add_property("algorithm",&algorithm::cstrs_core::get_algorithm,&algorithm::cstrs_core::set_algorithm);
 	
 	// Multistart.
 	algorithm_wrapper<algorithm::ms>("ms","Multistart.")

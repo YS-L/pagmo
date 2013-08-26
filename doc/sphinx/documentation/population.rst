@@ -175,6 +175,15 @@ Population
 	  * delta: Statistical test confidence
 	  * racers_idx: indices of the individuals in pop to be raced
 
+   .. method:: repair((int) idx, (int) iter=100, (float) tolerance=1e-6, (float) step_size=0.02)
+
+	  Repairs the individual at the position idx
+
+	  * idx: index of the individual to repair
+	  * iter: number of iterations to do for the repairing algorithm
+	  * tolerance: tolerance stop criterion for the repairing algorithm
+	  * step_size: step size for the repairing algorithm
+
    .. attribute:: champion
       :noindex:
 

@@ -45,36 +45,47 @@ namespace pagmo { namespace algorithm {
  *
  * @param[in] original_algo pagmo::algorithm to use as 'original' optimization method. Its number of
  * generations should be set to 1.
- * @param[in] original_algo_immune pagmo::algorithm to use as 'original' optimization method
- * for the immune system
  * @param[in] gen number of generations.
- * @param[in] select_method the method used for selecting the antibodies.
- * @param[in] inject_method the method used for reinjecting the antibodies.
- * @paran[in] phi the feasible fraction selection to compute the mean value
- * @paran[in] gamma number of antigens selected / number of total antigens
- * @paran[in] sigma number of antibodies / number of antigens
- * @param[in] ftol stopping criteria on the f tolerance
- * @param[in] xtol stopping criteria on the x tolerance
- * @throws value_error if gen is negative
+ * @param[in] repair_gen number of generations for the repairing algorithm.
+ * @param[in] repair_tolerance convergence tolerance for the repairing algorithm.
+ * @param[in] repair_step_size step size for the repairing algorithm (simplex).
+ * @param[in] repair_frequency The infeasible are repaired at each repair frequency generations.
+ * @param[in] repair_ratio It the repair ratio is the ratio of repaired individuals over infeasible
+ * ones (a ratio of 1 will repair all the individuals).
+ * @param[in] ftol stopping criteria on the f tolerance.
+ * @param[in] xtol stopping criteria on the x tolerance.
+ * @throws value_error if gen is negative, if repair frequency is negative.
  */
 cstrs_core::cstrs_core(const base &original_algo, int gen,
-					   int repair_iter,
+					   int repair_gen,
 					   double repair_tolerance,
 					   double repair_step_size,
+					   int repair_frequency,
+					   double repair_ratio,
 					   double ftol, double xtol):
-	base(),m_gen(gen),m_repair_iter(repair_iter),m_repair_tolerance(repair_tolerance),m_repair_step_size(repair_step_size),m_ftol(ftol),m_xtol(xtol)
+	base(),m_gen(gen),m_repair_gen(repair_gen),m_repair_tolerance(repair_tolerance),
+	m_repair_step_size(repair_step_size),m_repair_frequency(repair_frequency),
+	m_repair_ratio(repair_ratio),m_ftol(ftol),m_xtol(xtol)
 {
 	m_original_algo = original_algo.clone();
 
 	if(gen < 0) {
 		pagmo_throw(value_error,"number of generations must be nonnegative");
 	}
+	if(repair_frequency < 0) {
+		pagmo_throw(value_error,"repair frequency must be positive");
+	}
+	if((repair_ratio < 0) || (repair_ratio > 1)) {
+		pagmo_throw(value_error,"repair ratio must be in [0..1]");
+	}
 }
 
 /// Copy constructor.
 cstrs_core::cstrs_core(const cstrs_core &algo):
 	base(algo),m_original_algo(algo.m_original_algo->clone()),m_gen(algo.m_gen),
-	m_repair_iter(algo.m_repair_iter),m_repair_tolerance(algo.m_repair_tolerance),m_repair_step_size(algo.m_repair_step_size),m_ftol(algo.m_ftol), m_xtol(algo.m_xtol)
+	m_repair_gen(algo.m_repair_gen),m_repair_tolerance(algo.m_repair_tolerance),
+	m_repair_step_size(algo.m_repair_step_size),m_repair_frequency(algo.m_repair_frequency),
+	m_repair_ratio(algo.m_repair_ratio),m_ftol(algo.m_ftol), m_xtol(algo.m_xtol)
 {}
 
 /// Clone method.
@@ -118,19 +129,49 @@ void cstrs_core::evolve(population &pop) const
 	// associates the population to this problem
 	population pop_uncon(prob_unconstrained);
 
+	// fill this unconstrained population
+	pop_uncon.clear();
+	for(population::size_type i=0; i<pop_size; i++) {
+		pop_uncon.push_back(pop.get_individual(i).cur_x);
+	}
+
+	// vector containing the feasible and infeasibles positions
+	//std::vector<population::size_type> pop_feasibles;
+	std::vector<population::size_type> pop_infeasibles;
+
 	// Main CORE loop
 	for(int k=0; k<m_gen; k++) {
-		if(k%10) {
-			for(population::size_type i=0; i<pop_size; i++) {
-				pop.repair(i, m_repair_iter, m_repair_tolerance, m_repair_step_size);
-			}
-		}
 
-		// the population is repaired, it can be now used in the new unconstrained population
-		pop_uncon.clear();
-		// the initial popluation contains the initial random population
-		for(population::size_type i=0; i<pop_size; i++) {
-			pop_uncon.push_back(pop.get_individual(i).cur_x);
+		if(k%m_repair_frequency) {
+			//pop_feasibles.clear();
+			pop_infeasibles.clear();
+
+			// get the non feasible individuals
+			for(population::size_type i=0; i<pop_size; i++) {
+				if(!prob.feasibility_c(pop.get_individual(i).cur_c)) {
+					pop_infeasibles.push_back(i);
+				}
+//				else {
+//					pop_feasibles.push_back(i);
+//				}
+			}
+
+			// random shuffle of infeasibles?
+			population::size_type number_of_repair = (population::size_type)(m_repair_ratio * pop_infeasibles.size());
+
+			// repair the infeasible individuals
+			for(population::size_type i=0; i<number_of_repair; i++) {
+				const population::size_type &current_individual_idx = pop_infeasibles.at(i);
+
+				pop.repair(current_individual_idx, m_repair_gen, m_repair_tolerance, m_repair_step_size);
+			}
+
+			// the population is repaired, it can be now used in the new unconstrained population
+			// only the repaired individuals are put back in the population
+			for(population::size_type i=0; i<number_of_repair; i++) {
+				population::size_type current_individual_idx = pop_infeasibles.at(i);
+				pop_uncon.set_x(current_individual_idx, pop.get_individual(current_individual_idx).cur_x);
+			}
 		}
 
 		m_original_algo->evolve(pop_uncon);
@@ -176,12 +217,6 @@ void cstrs_core::evolve(population &pop) const
 			}
 		}
 	}
-
-//	// store the final population in the main population
-//	pop.clear();
-//	for(population::size_type i=0; i<pop_size; i++) {
-//		pop.push_back(pop_mixed.get_individual(i).cur_x);
-//	}
 }
 
 /// Algorithm name
