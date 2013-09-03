@@ -131,19 +131,23 @@ std::string get_solutions(archipelago a) {
 }
 
 problem::base_ptr get_constrained_prob(problem::base_ptr prob, int i) {
-	return prob;
+	switch(i) {
+	default:
+		return prob;
+		break;
+	}
 }
 
-algorithm::base_ptr get_constrained_algo(algorithm::base_ptr algo, int i) {
+algorithm::base_ptr get_constrained_algo(algorithm::base_ptr algo, algorithm::base_ptr repair_algo, int i) {
 	switch(i) {
 	case(0):
-		return algorithm::cstrs_core(*algo, 100).clone();
+		return algorithm::cstrs_core(*algo,*repair_algo,100).clone();
 		break;
 	case(1):
-		return algorithm::cstrs_core(*algo, 5000).clone();
+		return algorithm::cstrs_core(*algo,*repair_algo,5000).clone();
 		break;
 	case(2):
-		return algorithm::cstrs_core(*algo, 20000).clone();
+		return algorithm::cstrs_core(*algo,*repair_algo,20000).clone();
 		break;
 	default:
 		return algo;
@@ -201,12 +205,18 @@ int main()
 
 	//2 - We instantiate the algorithms
 	std::vector<algorithm::base_ptr> algos;
-
+	algorithm::base_ptr repair_algo;
+#ifdef PAGMO_ENABLE_GSL
+	repair_algo = algorithm::gsl_nm2(100, 1e-5, 0.02).clone();
+#else
+	pagmo_throw(assertion_error,"The GSL library must be installed to use the repair main example");
+	return 1;
+#endif
 	// avoiding elitism here
-//	algos.push_back(pagmo::algorithm::sga(1 ,0.9, 0.03, 1000,
-//										  algorithm::sga::mutation::RANDOM, 0.1,
-//										  algorithm::sga::selection::ROULETTE,
-//										  algorithm::sga::crossover::BINOMIAL).clone());
+	//	algos.push_back(pagmo::algorithm::sga(1 ,0.9, 0.03, 1000,
+	//										  algorithm::sga::mutation::RANDOM, 0.1,
+	//										  algorithm::sga::selection::ROULETTE,
+	//										  algorithm::sga::crossover::BINOMIAL).clone());
 
 	//	algos.push_back(pagmo::algorithm::sga(1 ,0.9, 0.05, 1000,
 	//										  algorithm::sga::mutation::RANDOM, 0.1,
@@ -225,10 +235,10 @@ int main()
 
 	//algos.push_back(pagmo::algorithm::de(1).clone());
 
-//	algos.push_back(pagmo::algorithm::sga_gray(1,0.9,0.003,10000,
-//											   algorithm::sga_gray::mutation::UNIFORM,
-//											   algorithm::sga_gray::selection::ROULETTE,
-//											   algorithm::sga_gray::crossover::SINGLE_POINT).clone());
+	//	algos.push_back(pagmo::algorithm::sga_gray(1,0.9,0.003,10000,
+	//											   algorithm::sga_gray::mutation::UNIFORM,
+	//											   algorithm::sga_gray::selection::ROULETTE,
+	//											   algorithm::sga_gray::crossover::SINGLE_POINT).clone());
 
 	algos.push_back(algorithm::de(1, 0.8, 0.9, 2, 1e-15, 1e-15).clone());
 
@@ -275,7 +285,7 @@ int main()
 
 				for (unsigned int al=0; al<algos.size(); ++al) {
 					// we generate the constrained algorithm
-					algorithm::base_ptr constrained_algorithm = get_constrained_algo(algos[al], ch);
+					algorithm::base_ptr constrained_algorithm = get_constrained_algo(algos[al], repair_algo, ch);
 
 					pagmo::archipelago a = pagmo::archipelago(*topo[to]);
 
@@ -363,5 +373,4 @@ int main()
 	}
 	return 0;
 }
-
 

@@ -232,8 +232,9 @@ BOOST_PYTHON_MODULE(_algorithm) {
 
 	// Constraints CORE.
 	algorithm_wrapper<algorithm::cstrs_core>("cstrs_core","Constraints core.")
-		.def(init<optional<const algorithm::base &,int,int,double,double,int,double,double,double> >())
-		.add_property("algorithm",&algorithm::cstrs_core::get_algorithm,&algorithm::cstrs_core::set_algorithm);
+            .def(init<optional<const algorithm::base &,const algorithm::base &,int,int,double,double,double> >())
+        .add_property("algorithm",&algorithm::cstrs_core::get_algorithm,&algorithm::cstrs_core::set_algorithm)
+        .add_property("algorithm_repair",&algorithm::cstrs_core::get_repair_algorithm,&algorithm::cstrs_core::set_repair_algorithm);
 	
 	// Multistart.
 	algorithm_wrapper<algorithm::ms>("ms","Multistart.")

@@ -570,28 +570,25 @@ def _cstrs_immune_system_ctor(self,algorithm = _algorithm.jde(), algorithm_immun
 cstrs_immune_system._orig_init = cstrs_immune_system.__init__
 cstrs_immune_system.__init__ = _cstrs_immune_system_ctor
 
-def _cstrs_core_ctor(self,algorithm = _algorithm.jde(), gen = 1, repair_gen = 100, repair_tolerance = 1e-5, repair_step_size = 0.02, repair_frequency = 10, repair_ratio = 1., f_tol = 1e-15, x_tol = 1e-15):
+def _cstrs_core_ctor(self,algorithm = _algorithm.jde(), repair_algorithm = _algorithm.jde(), gen = 1, repair_frequency = 10, repair_ratio = 1., f_tol = 1e-15, x_tol = 1e-15):
 	"""
-    Constructs CORE constraints handling algorithm (repairing technique).
+	Constructs CORE constraints handling algorithm (repairing technique).
 	
-	USAGE: algorithm._cstrs_core(algorithm = _algorithm.jde(), gen = 1, repair_gen = 100, repair_tolerance = 1e-5, repair_step_size = 0.02, repair_frequency = 10, repair_ratio = 1., f_tol = 1e-15, x_tol = 1e-15):
-    *
+	USAGE: algorithm._cstrs_core(algorithm = _algorithm.jde(), algorithm = _algorithm.jde(), gen = 1, repair_frequency = 10, repair_ratio = 1., f_tol = 1e-15, x_tol = 1e-15):
+
 	* algorithm: optimizer to use as 'original' optimization method. Its number of generations should be set to 1.
-    * gen: number of generations.
-    * repair_tolerance: convergence tolerance for the repairing algorithm.
-    * repair_step_size: step size for the repairing algorithm (simplex).
-    * repair_frequency: The infeasible are repaired at each repair frequency generations.
-    * repair_ratio: It the repair ratio is the ratio of repaired individuals over infeasible
-    * ones (a ratio of 1 will repair all the individuals).
-    * ftol: 1e-15 by default. The stopping criteria on the x tolerance.
-    * xtol: 1e-15 by default. The stopping criteria on the f tolerance.
+	* repair_algorithm: optimizer to use as 'repairing' algorithm. It should be able to deal with population of size 1.
+	* gen: number of generations.
+	* repair_frequency: The infeasible are repaired at each repair frequency generations.
+	* repair_ratio: It the repair ratio is the ratio of repaired individuals over infeasible
+	* ones (a ratio of 1 will repair all the individuals).
+	* ftol: 1e-15 by default. The stopping criteria on the x tolerance.
+	* xtol: 1e-15 by default. The stopping criteria on the f tolerance.
 	"""
 	arg_list=[]
 	arg_list.append(algorithm)
+	arg_list.append(repair_algorithm)
 	arg_list.append(gen)
-	arg_list.append(repair_gen)
-	arg_list.append(repair_tolerance)
-	arg_list.append(repair_step_size)
 	arg_list.append(repair_frequency)
 	arg_list.append(repair_ratio)
 	arg_list.append(f_tol)

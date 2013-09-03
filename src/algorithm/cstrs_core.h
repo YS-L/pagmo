@@ -57,10 +57,8 @@ namespace pagmo { namespace algorithm {
 class __PAGMO_VISIBLE cstrs_core: public base
 {
 public:
-	cstrs_core(const base & = jde(1), int gen = 1,
-			   int = 100,
-			   double = 1e-5,
-			   double = 0.02,
+    cstrs_core(const base & = jde(1), const base & = jde(1),
+               int = 1,
 			   int = 10,
 			   double = 1.,
 			   double = 1e-15, double = 1e-15);
@@ -72,6 +70,8 @@ public:
 	std::string get_name() const;
 	base_ptr get_algorithm() const;
 	void set_algorithm(const base &);
+    base_ptr get_repair_algorithm() const;
+    void set_repair_algorithm(const base &);
 
 protected:
 	std::string human_readable_extra() const;
@@ -83,22 +83,18 @@ private:
 	{
 		ar & boost::serialization::base_object<base>(*this);
 		ar & m_original_algo;
-		ar & const_cast<int &>(m_gen);
-		ar & const_cast<int &>(m_repair_gen);
-		ar & const_cast<double &>(m_repair_tolerance);
-		ar & const_cast<double &>(m_repair_step_size);
+        ar & m_repair_algo;
+        ar & const_cast<int &>(m_gen);
 		ar & const_cast<int &>(m_repair_frequency);
 		ar & const_cast<double &>(m_repair_ratio);
 		ar & const_cast<double &>(m_ftol);
 		ar & const_cast<double &>(m_xtol);
 	}
 	base_ptr m_original_algo;
+    base_ptr m_repair_algo;
 	//Number of generations
 	const int m_gen;
-	// repair constants
-	const int m_repair_gen;
-	const double m_repair_tolerance;
-	const double m_repair_step_size;
+    // repair constants
 	const int m_repair_frequency;
 	const double m_repair_ratio;
 
@@ -111,4 +107,4 @@ private:
 
 BOOST_CLASS_EXPORT_KEY(pagmo::algorithm::cstrs_core);
 
-#endif // PAGMO_ALGORITHM_cstrs_core_H
+#endif // PAGMO_ALGORITHM_CSTRS_CORE_H

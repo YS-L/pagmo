@@ -37,24 +37,17 @@
 #include "base.h"
 #include "cstrs_core.h"
 
-
-#ifdef PAGMO_ENABLE_GSL
-#include "../algorithm/base_gsl.h"
-#include "../algorithm/gsl_nm2.h"
-#endif
-
 namespace pagmo { namespace algorithm {
 
 /// Constructor.
 /**
- * Constructs an immune system constraints handling algorithm
+ * Constructs a CORE constraints handling algorithm
  *
  * @param[in] original_algo pagmo::algorithm to use as 'original' optimization method. Its number of
  * generations should be set to 1.
+ * @param[in] repair_algo pagmo::algorithm to use as 'repairing' optimization algorithm. It should be
+ * able to deal with population of size 1.
  * @param[in] gen number of generations.
- * @param[in] repair_gen number of generations for the repairing algorithm.
- * @param[in] repair_tolerance convergence tolerance for the repairing algorithm.
- * @param[in] repair_step_size step size for the repairing algorithm (simplex).
  * @param[in] repair_frequency The infeasible are repaired at each repair frequency generations.
  * @param[in] repair_ratio It the repair ratio is the ratio of repaired individuals over infeasible
  * ones (a ratio of 1 will repair all the individuals).
@@ -62,18 +55,18 @@ namespace pagmo { namespace algorithm {
  * @param[in] xtol stopping criteria on the x tolerance.
  * @throws value_error if gen is negative, if repair frequency is negative.
  */
-cstrs_core::cstrs_core(const base &original_algo, int gen,
-					   int repair_gen,
-					   double repair_tolerance,
-					   double repair_step_size,
+cstrs_core::cstrs_core(const base &original_algo, const base &repair_algo,
+                       int gen,
 					   int repair_frequency,
 					   double repair_ratio,
 					   double ftol, double xtol):
-	base(),m_gen(gen),m_repair_gen(repair_gen),m_repair_tolerance(repair_tolerance),
-	m_repair_step_size(repair_step_size),m_repair_frequency(repair_frequency),
+    base(),m_original_algo(original_algo.clone()),
+    m_repair_algo(repair_algo.clone()),
+    m_gen(gen),m_repair_frequency(repair_frequency),
 	m_repair_ratio(repair_ratio),m_ftol(ftol),m_xtol(xtol)
 {
-	m_original_algo = original_algo.clone();
+//	m_original_algo = original_algo.clone();
+//    m_repair_algo = repair_algo.clone();
 
 	if(gen < 0) {
 		pagmo_throw(value_error,"number of generations must be nonnegative");
@@ -88,10 +81,11 @@ cstrs_core::cstrs_core(const base &original_algo, int gen,
 
 /// Copy constructor.
 cstrs_core::cstrs_core(const cstrs_core &algo):
-	base(algo),m_original_algo(algo.m_original_algo->clone()),m_gen(algo.m_gen),
-	m_repair_gen(algo.m_repair_gen),m_repair_tolerance(algo.m_repair_tolerance),
-	m_repair_step_size(algo.m_repair_step_size),m_repair_frequency(algo.m_repair_frequency),
-	m_repair_ratio(algo.m_repair_ratio),m_ftol(algo.m_ftol), m_xtol(algo.m_xtol)
+    base(algo),m_original_algo(algo.m_original_algo->clone()),
+    m_repair_algo(algo.m_repair_algo->clone()),m_gen(algo.m_gen),
+    m_repair_frequency(algo.m_repair_frequency),
+    m_repair_ratio(algo.m_repair_ratio),
+    m_ftol(algo.m_ftol),m_xtol(algo.m_xtol)
 {}
 
 /// Clone method.
@@ -128,8 +122,6 @@ void cstrs_core::evolve(population &pop) const
 	if(pop_size == 0) {
 		return;
 	}
-
-	algorithm::gsl_nm2 repair_algo(m_repair_gen, m_repair_tolerance, m_repair_step_size);
 
 	// generates the unconstrained problem
 	problem::con2uncon prob_unconstrained(prob);
@@ -171,7 +163,7 @@ void cstrs_core::evolve(population &pop) const
 			for(population::size_type i=0; i<number_of_repair; i++) {
 				const population::size_type &current_individual_idx = pop_infeasibles.at(i);
 
-				pop.repair(current_individual_idx, repair_algo);
+                pop.repair(current_individual_idx, m_repair_algo);
 			}
 
 			// the population is repaired, it can be now used in the new unconstrained population
@@ -251,6 +243,26 @@ base_ptr cstrs_core::get_algorithm() const
 void cstrs_core::set_algorithm(const base &algo)
 {
 	m_original_algo = algo.clone();
+}
+
+/// Get a copy of the internal local repair algorithm.
+/**
+ * @return algorithm::base_ptr to a copy of the internal local repair algorithm.
+ */
+base_ptr cstrs_core::get_repair_algorithm() const
+{
+    return m_repair_algo->clone();
+}
+
+/// Set algorithm.
+/**
+ * A copy of the input algorithm will be set as the internal local repair algorithm.
+ *
+ * @param[in] algo algorithm to be set as local repair algorithm.
+ */
+void cstrs_core::set_repair_algorithm(const base &algo)
+{
+    m_repair_algo = algo.clone();
 }
 
 /// Extra human readable algorithm info.

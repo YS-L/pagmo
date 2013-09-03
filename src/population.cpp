@@ -790,7 +790,7 @@ std::vector<population::size_type> population::get_best_idx(const population::si
  *
  * @throws index_error if idx is larger than the population size
  */
-void population::repair(const population::size_type &idx, const algorithm::base &repair_algo)
+void population::repair(const population::size_type &idx, const algorithm::base_ptr &repair_algo)
 {
 	if (idx >= size()) {
 		pagmo_throw(index_error,"invalid individual position");
@@ -810,7 +810,7 @@ void population::repair(const population::size_type &idx, const algorithm::base 
 	pop_repair.clear();
 	pop_repair.push_back(current_x);
 
-	repair_algo.evolve(pop_repair);
+    repair_algo->evolve(pop_repair);
 
 	this->set_x(idx,pop_repair.get_individual(0).cur_x);
 }

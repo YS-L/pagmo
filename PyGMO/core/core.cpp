@@ -135,7 +135,7 @@ inline static void population_set_v(population &pop, int n, const decision_vecto
 	pop.set_v(boost::numeric_cast<population::size_type>(n),v);
 }
 
-inline static void population_repair(population &pop, const int &idx, const algorithm::base &repair_algo)
+inline static void population_repair(population &pop, const int &idx, const algorithm::base_ptr &repair_algo)
 {
 	pop.repair(boost::numeric_cast<population::size_type>(idx),repair_algo);
 }

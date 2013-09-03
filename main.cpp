@@ -37,11 +37,19 @@ int main()
 	//pagmo::problem::tens_comp_string prob_constrained;
 	//pagmo::problem::pressure_vessel prob_constrained;
 
-	pagmo::algorithm::de algo(10, 0.8, 0.9, 2, 1e-15, 1e-15);
+    pagmo::algorithm::de algo(1, 0.8, 0.9, 2, 1e-15, 1e-15);
 //	pagmo::algorithm::cmaes algo(1);
 //	pagmo::algorithm::cmaes algo_2(70);
 
-	pagmo::algorithm::cstrs_core algo_constrained(algo, 1000);
+#ifndef PAGMO_ENABLE_GSL
+    pagmo_throw(assertion_error,"The GSL library must be installed to use the repair main example");
+    return 1;
+#endif
+
+#ifdef PAGMO_ENABLE_GSL
+    pagmo::algorithm::gsl_nm2 repair_algo(100, 1e-5, 0.02);
+
+    pagmo::algorithm::cstrs_core algo_constrained(algo, repair_algo, 1000);
 	algo_constrained.reset_rngs(100);
 
 	std::cout << algo_constrained;
@@ -79,5 +87,6 @@ int main()
 //		std::cout << isl.get_population().champion();
 //	}
 
+#endif
 	return 0;
 }
