@@ -81,6 +81,7 @@ void con2uncon::objfun_impl(fitness_vector &f, const decision_vector &x) const
 	switch(m_method) {
 	case(OPTIMALITY): {
 		m_original_problem->objfun(f,x);
+		break;
 	}
 	case(FEASIBILITY): {
 		// get the constraints dimension
@@ -92,25 +93,27 @@ void con2uncon::objfun_impl(fitness_vector &f, const decision_vector &x) const
 		constraint_vector c(m_original_problem->get_c_dimension(),0);
 		m_original_problem->compute_constraints(c,x);
 
+		const std::vector<double> &c_tol = m_original_problem->get_c_tol();
+
 		double c_func = 0.;
 
 		// update equality constraints
 		for(problem::base::c_size_type j=0; j<number_of_eq_constraints; j++) {
 			if(!m_original_problem->test_constraint(c,j)) {
-				c_func += c.at(j) * c.at(j);
+				c_func += ( std::abs(c.at(j)) - c_tol.at(j) ) * ( std::abs(c.at(j)) - c_tol.at(j) );
 			}
 		}
 
 		// update inequality constraints
 		for(problem::base::c_size_type j=number_of_eq_constraints; j<prob_c_dimension; j++) {
 			if(!m_original_problem->test_constraint(c,j)) {
-				// we take the absolute value as we want to minimize the constraint
-				c_func += std::abs(c.at(j));
+				c_func += std::abs(c.at(j)) - c_tol.at(j);
 			}
 		}
 
 		std::fill(f.begin(),f.end(), 0.);
 		f[0] = c_func;
+		break;
 	}
 	}
 }
@@ -153,14 +156,14 @@ std::string con2uncon::get_name() const
 	std::string method;
 
 	switch(m_method){
-		case OPTIMALITY: {
-			method = "OPTIMALITY ";
-			break;
-		}
-		case FEASIBILITY: {
-			method = "FEASIBILITY ";
-			break;
-			}
+	case OPTIMALITY: {
+		method = "OPTIMALITY ";
+		break;
+	}
+	case FEASIBILITY: {
+		method = "FEASIBILITY ";
+		break;
+	}
 	}
 	return m_original_problem->get_name() + " [con2uncon, method_" + method + "]";
 }
