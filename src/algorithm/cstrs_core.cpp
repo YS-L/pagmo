@@ -37,6 +37,12 @@
 #include "base.h"
 #include "cstrs_core.h"
 
+
+#ifdef PAGMO_ENABLE_GSL
+#include "../algorithm/base_gsl.h"
+#include "../algorithm/gsl_nm2.h"
+#endif
+
 namespace pagmo { namespace algorithm {
 
 /// Constructor.
@@ -123,6 +129,8 @@ void cstrs_core::evolve(population &pop) const
 		return;
 	}
 
+	algorithm::gsl_nm2 repair_algo(m_repair_gen, m_repair_tolerance, m_repair_step_size);
+
 	// generates the unconstrained problem
 	problem::con2uncon prob_unconstrained(prob);
 
@@ -163,7 +171,7 @@ void cstrs_core::evolve(population &pop) const
 			for(population::size_type i=0; i<number_of_repair; i++) {
 				const population::size_type &current_individual_idx = pop_infeasibles.at(i);
 
-				pop.repair(current_individual_idx, m_repair_gen, m_repair_tolerance, m_repair_step_size);
+				pop.repair(current_individual_idx, repair_algo);
 			}
 
 			// the population is repaired, it can be now used in the new unconstrained population

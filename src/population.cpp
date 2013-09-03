@@ -45,10 +45,6 @@
 
 #include "algorithm/base.h"
 #include "problem/con2uncon.h"
-#ifdef PAGMO_ENABLE_GSL
-#include "algorithm/base_gsl.h"
-#include "algorithm/gsl_nm2.h"
-#endif
 
 namespace pagmo
 {
@@ -785,24 +781,17 @@ std::vector<population::size_type> population::get_best_idx(const population::si
 
 /// Repairs the individual at the position idx.
 /**
- * This methods repairs an infeasible individual to make it feasible. The method uses the simplex
- * optimization algorithm if the GSL library is available. It minimizes the constraints violation.
+ * This methods repairs an infeasible individual to make it feasible. The method uses the repairing
+ * algorithm provided by the user. It minimizes the constraints violation.
  *
  * @param[in] idx index of the individual to repair
- * @param[in] iter number of iterations to do for the repairing algorithm
- * @param[in] tolerance tolerance stop criterion for the repairing algorithm
- * @param[in] step_size step size for the repairing algorithm
+ * @param[in] repair_algo algorithm to be used to repair the individual. Should be an algorithm
+ * working with a population of size 1.
  *
  * @throws index_error if idx is larger than the population size
- * @throws assertion_error if the GSL library is not available
  */
-void population::repair(const population::size_type &idx, const int &iter, const double &tolerance, const double &step_size)
+void population::repair(const population::size_type &idx, const algorithm::base &repair_algo)
 {
-
-#ifndef PAGMO_ENABLE_GSL
-	pagmo_throw(assertion_error,"The GSL library is not available, thus the repair method can't be used.");
-#endif
-
 	if (idx >= size()) {
 		pagmo_throw(index_error,"invalid individual position");
 	}
@@ -821,8 +810,7 @@ void population::repair(const population::size_type &idx, const int &iter, const
 	pop_repair.clear();
 	pop_repair.push_back(current_x);
 
-	pagmo::algorithm::gsl_nm2 simplex_algo(iter,tolerance,step_size);
-	simplex_algo.evolve(pop_repair);
+	repair_algo.evolve(pop_repair);
 
 	this->set_x(idx,pop_repair.get_individual(0).cur_x);
 }

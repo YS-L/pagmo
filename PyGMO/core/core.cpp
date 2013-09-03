@@ -135,9 +135,9 @@ inline static void population_set_v(population &pop, int n, const decision_vecto
 	pop.set_v(boost::numeric_cast<population::size_type>(n),v);
 }
 
-inline static void population_repair(population &pop, const int &idx, const int &iter, const double &tolerance, const double &step_size)
+inline static void population_repair(population &pop, const int &idx, const algorithm::base &repair_algo)
 {
-	pop.repair(boost::numeric_cast<population::size_type>(idx),iter,tolerance,step_size);
+	pop.repair(boost::numeric_cast<population::size_type>(idx),repair_algo);
 }
 
 struct __PAGMO_VISIBLE population_pickle_suite : boost::python::pickle_suite
